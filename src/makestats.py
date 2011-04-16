@@ -37,6 +37,7 @@ args = deque(sys.argv[1:])
 files = []  #files to process
 n = 1
 mode = 0  #0- letters, 1 words
+
 while len(args) > 0:
    par = args.popleft()
    if par == "-n":

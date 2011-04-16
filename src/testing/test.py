@@ -12,17 +12,18 @@ def getAllphabet(text):
 
 def testText(model, text):
 
-   entropy = float("inf")
+   entropy = 0
    keystrokes = 0
    position = 0
    alphabet = getAllphabet(text)
    model.setText(data)
 
    for char in data:
-      entropy += - math.log(model.getCharProbability(position, char), 2)
+      prob = model.getCharProbability(position, char)
+      entropy += - math.log(prob, 2) if prob > 0 else float("inf")
 
       # calculate no. of keystrokes as order in sorted alhabet
-      sortedAlphabet = sorted(alphabet, key = lambda(c): model.getCharProbability(position, c))
+      sortedAlphabet = sorted(alphabet, key = lambda(c): model.getCharProbability(position, c), reverse = 1)
       keystrokes += sortedAlphabet.index(char)
       
       position += 1
@@ -43,6 +44,8 @@ Model = __import__(modelName + "Model")
 Model = Model.Model
 
 model = Model()
+
+print type(model)
 
 print "Test results: (filename, cross entropy, keystrokes)"
 for filename in sys.argv[2:]:
