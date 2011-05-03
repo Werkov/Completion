@@ -2,4 +2,7 @@ Individual software project
 ===========================
 
 Uses language models to predict what user is about to write.
-
+It can be used:
+ - in T9 or iTap like systems,
+ - for auto-completion in text editors,
+ - in devices for disabled people (writing with one finger, eye movements, etc.).
