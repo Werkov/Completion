@@ -19,10 +19,10 @@ def testSentences(model, sentences, alphabet, S, C):
       sentence = sentence.strip() #remove trailing NL
       pos = 0
       for char in sentence:
-         prob = model.getCharProbability(sentence[0:pos], char)
+         prob = model.getCharLogProbability(sentence[0:pos], char)
          pos += 1
          tokens += 1         
-         entropy += - math.log(prob, 2) if prob > 0 else float("inf")
+         entropy += -prob / (math.log(2, 10)) # 10 base log to 2 base
 
          # calculate no. of keystrokes as order in sorted alhabet
          sortedAlphabet = sorted(alphabet, key = lambda(c): model.getCharProbability(sentence[0:pos], c), reverse = 1)
@@ -51,10 +51,11 @@ if len(sys.argv) < 2:
    sys.exit(1)
 
 modelName = sys.argv[1]
-Model = __import__(modelName + "Model")
-Model = Model.Model
+#Model = __import__(modelName + "Model")
+#Model = Model.Model
+from ArpaModel import ArpaModel
 
-model = Model()
+model = ArpaModel(modelName + ".arpa")
 
 args = deque(sys.argv[2:])
 files = []
