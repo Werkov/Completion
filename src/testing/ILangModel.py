@@ -1,11 +1,8 @@
 #!/usr/bin/python
 
 class ILangModel:
-   # sets text used for testing the model
-   def setText(self, text):
-      pass
-
-   # gets the probability of char @char at @position
-   # in using history before @position from text
-   def getCharProbability(self, position, char):
+   # gets the probability that @char follows
+   # the given @context
+   #return double
+   def getCharProbability(self, context, char):
       return 0
