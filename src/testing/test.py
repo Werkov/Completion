@@ -72,7 +72,7 @@ while len(args) > 0:
 
 if len(files) == 0:
    print "No input files given."
-   exit(1)
+   sys.exit(1)
    
 results = []	#results of single tests (to calculate variance)
 for filename in files:
