@@ -21,9 +21,8 @@ def testSentences(model, sentences, alphabet, S, C):
       pos = 0
       for char in sentence:
          prob = model.getCharLogProbability(sentence[0:pos], char)
-	 if prob < -10:
-	    print "-" + char + "-"
-         pos += 1
+	 
+	 pos += 1
          tokens += 1         
          entropy += -prob / (math.log(2, 10)) # 10 base log to 2 base
 
@@ -110,7 +109,7 @@ varN, varH, varK = tmpN / len(results), tmpH / len(results), tmpK / len(results)
 
 print "Overall test results:"
 print "Average tokens: " + str(avgN) + " (variance " + str(varN) +  ")"
-print "Average entropy: " + str(avgH) + " (variance " + str(varH) + ")"
+print "Average perplexity: " + str(2**avgH) + " (entropy " + str(avgH) + ")"
 print "Average keystrokes: " + str(avgK) + " (variance " + str(varK) + ")"
 print
 
