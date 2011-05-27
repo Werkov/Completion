@@ -12,5 +12,5 @@ class ILangModel:
    # the given @context as 10 base logarithm
    #return double
    def getCharLogProbability(self, context, char):
-      prop = self.getCharProbability(context, char)
+      prob = self.getCharProbability(context, char)
       return math.log(prob, 10) if prob > 0 else float("-inf")

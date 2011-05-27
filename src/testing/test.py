@@ -46,18 +46,20 @@ alphabet = lettersL + lettersU + interpunction + delimiters
 
 
 # -- Parse command line options and arguments --
-if len(sys.argv) < 2:
-   print "Usage: test.py modelName file(s) ..."
+if len(sys.argv) < 3:
+   print "Usage: test.py modelName statsFile file(s) ..."
    sys.exit(1)
 
 modelName = sys.argv[1]
-#Model = __import__(modelName + "Model")
-#Model = Model.Model
-from ArpaModel import ArpaModel
+statsFile = sys.argv[2]
+Model = __import__(modelName + "Model")
+Model = Model.LetterModel
+#from ArpaModel import ArpaModel
 
-model = ArpaModel(modelName + ".arpa")
+#model = ArpaModel(modelName + ".arpa")
+model = Model(statsFile)
 
-args = deque(sys.argv[2:])
+args = deque(sys.argv[3:])
 files = []
 
 while len(args) > 0:
