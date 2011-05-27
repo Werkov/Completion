@@ -1,44 +1,50 @@
 #!/usr/bin/python
 #coding=utf-8
 
+import codecs
 import string
 import re
 from ILangModel import ILangModel
 
 class AbstractLetterModel (ILangModel):
-   counts = {}	  # coutns for letter ngrams
-   nCounts = {}	  # counts for whole ngram classes
+   counts = {}	  # counts of occurencies for each ngram
+   nCounts = {}	  # counts of occurencies for each ngram length
    alphabetSize = 0
-   maxOrder = 0
+#   maxOrder = 0
    begToken = "\\beg"
    
    
    def __init__(self, statsFile):
-      f = open(statsFile)
+      f = codecs.open(statsFile, "r", "utf-8")
 
       m = re.match(r"Chars (\d+)\s*(#.*)?", f.readline().strip())
       self.alphabetSize = int(m.group(1))
 
-      m = re.match(r"Order (\d+)\s*(#.*)?", f.readline().strip())
-      self.maxOrder = int(m.group(1))
-
-      ngramCounts = [0] * (self.maxOrder + 1) # one wasted item in order to index from 1
+#      m = re.match(r"Order (\d+)\s*(#.*)?", f.readline().strip())
+#      self.maxOrder = int(m.group(1))
 
       # load counts of unique ngrams
-      for i in range(1, self.maxOrder + 1):
-	 m = re.match(r"\d+-gram (\d+)\s*(#.*)?", f.readline().strip())
-	 ngramCounts[i] = int(m.group(1))
+      ngramCounts = {}
+      lenOrder = []
+
+      line = f.readline().strip("\r\n")
+      m = re.match(r"(\d+)-gram (\d+)\s*(#.*)?", line)
+      while m:
+	 ngramCounts[int(m.group(1))] = int(m.group(2))
+	 lenOrder.append(int(m.group(1)))
+
+	 line = f.readline().strip("\r\n")
+	 m = re.match(r"(\d+)-gram (\d+)\s*(#.*)?", line)
 
       # load stats for each ngram length
-      for i in range(1, self.maxOrder + 1):
-	 self.nCounts[i] = 0
-	 for j in range(0, ngramCounts[i]):
-	    line = f.readline().strip()
-	    print line
+      for len in lenOrder:
+	 self.nCounts[len] = 0
+	 for j in range(0, ngramCounts[len]):	    
 	    m = re.match(r"(.*) (\d+)\s*(#.*)?", line)
 	    cnt = int(m.group(2))
 	    self.counts[m.group(1)] = cnt
-	    self.nCounts[i] += cnt
+	    self.nCounts[len] += cnt
+	    line = f.readline().strip("\r\n")
 	    
       f.close()
             

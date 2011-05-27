@@ -1,6 +1,7 @@
 #!/usr/bin/python
 #coding=utf-8
 import sys
+import codecs
 import math
 from collections import deque
 
@@ -20,6 +21,8 @@ def testSentences(model, sentences, alphabet, S, C):
       pos = 0
       for char in sentence:
          prob = model.getCharLogProbability(sentence[0:pos], char)
+	 if prob < -10:
+	    print "-" + char + "-"
          pos += 1
          tokens += 1         
          entropy += -prob / (math.log(2, 10)) # 10 base log to 2 base
@@ -38,7 +41,7 @@ def testSentences(model, sentences, alphabet, S, C):
 S = 50
 C = 1 # hitting enter
 
-lettersL = "abcdefghijklmnopqrstuvwxyzěščřžýáíéůúťďň"
+lettersL = u"abcdefghijklmnopqrstuvwxyzěščřžýáíéůúťďň"
 lettersU = lettersL.upper()
 interpunction = ",."
 delimiters = " "
@@ -79,7 +82,7 @@ if len(files) == 0:
    
 results = []	#results of single tests (to calculate variance)
 for filename in files:
-   f = open(filename)
+   f = codecs.open(filename, "r", "utf-8")
    n, h, k = testSentences(model, f.readlines(), alphabet, S, C)
    results.append((n, h, k))
    print "File:", filename

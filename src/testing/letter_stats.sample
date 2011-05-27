@@ -1,7 +1,6 @@
 Chars 5 # overall size of the alphabet
-Order 1 # maximum order of used ngrams
 1-gram 4 # for each ngram size count of occured unique ngrams
-a 3 # lisitng of unique ngrams counts
+a 3 # listing of unique ngrams counts
 b 2
 c 1
 d 1
