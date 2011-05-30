@@ -6,5 +6,5 @@ import re
 from AbstractNgramLetterModel import AbstractNgramLetterModel
 
 class LetterModel (AbstractNgramLetterModel):
-   order = 2
+   order = 3
    lCoeff = 0.9
