@@ -79,6 +79,15 @@ for filename in files:
       if token == Reader.newSentence:
 	 buffer = [Reader.begToken] * n
 	 token = r.getToken()
+	 # count beginings to occurencies
+	 for length in range(1, n + 1):
+	    key = join(buffer[-length:], "")
+
+	    if key in stats[length-1]:
+	       stats[length-1][key] += 1
+	    else:
+	       stats[length-1][key] = 1
+
 	 continue
 	 
       tokensCnt += 1
