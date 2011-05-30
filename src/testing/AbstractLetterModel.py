@@ -45,3 +45,14 @@ class AbstractLetterModel (ILangModel):
             
    def knownChars(self):
       return self.nUCounts[1] if 1 in self.nUCounts else 0
+
+   # expands (with beg tokens) or shrinks context to given length @n
+   def alignContext(self, context, n):
+      if n == 0:
+	 return ""
+
+      context = context[-n:]
+      if len(context) < n:
+	 context = self.begToken* (n-len(context)) + context
+
+      return context
