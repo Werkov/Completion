@@ -37,7 +37,8 @@ def testSentences(model, sentences, alphabet, S, C, verbose = False):
 	       print char.encode("utf-8"), "("+format(10**prob, "f")+"): ", string.join(map(lambda(c): c.encode("utf-8"), sortedAlphabet[0:sortedAlphabet.index(char)+1]), ",")
          except ValueError:
             kst += S
-	    print char.encode("utf-8"), "("+format(10**prob, "f")+"): ", "not in input alphabet"
+	    if verbose:
+	       print char.encode("utf-8"), "("+format(10**prob, "f")+"): ", "not in input alphabet"
 	    
 	 keystrokes.append(kst)
 	 pos += 1

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import math
 
-class ILangModel:
+class ILangModel(object):
    # gets the probability that @char follows
    # the given @context
    #return double

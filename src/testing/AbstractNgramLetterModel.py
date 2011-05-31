@@ -13,6 +13,14 @@ class AbstractNgramLetterModel (AbstractLetterModel):
    # lCoeff  how much we add to unseen tokens
 
    def getCharProbability(self, context, char):
+      # unigram fallback
+      if self.order == 1:
+	 if char in self.counts:
+	    return self.lCoeff * self.counts[char] / float(self.nCounts[1])
+	 else:
+	    return (1-self.lCoeff) / (self.alphabetSize - self.knownChars())
+
+
       context = self.alignContext(context, self.order - 1)
       ngram = context + char
 
