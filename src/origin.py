@@ -1,4 +1,4 @@
-from math import log
+from math import log, sqrt
 import re
 import sys
 
@@ -145,41 +145,116 @@ class LaplaceSmoothLM:
 
     def getAllCount(self, length):
         return self.baseLM.getAllCount(length) + self.parameter * (self.vocabularySize ** length)
-        
+
+class SuggestionSelector:
+    def __init__(self, bigramDict):
+        self.search = bigramDict
+    def getSuggestions(self, context):
+        lastToken = context[len(context)-1]
+        if lastToken not in self.search:
+            return []
+        else:
+            return self.search[lastToken].keys()
+
+class SuggestionSorter:
+    def __init__(self, languageModel):
+        self.languageModel = languageModel
+    def getSortedSuggestions(self, context, suggestions):
+        cnt, probContext = self.languageModel.getProbability(context)
+        tips = []
+        for token in suggestions:
+            cnt, probNgram = self.languageModel.getProbability(context + [token])
+            tips.append((token, log(probNgram / probContext)))
+
+        tips.sort(key=lambda pair: -pair[1])
+        return tips
+
+class AutomatedTest:
+    def __init__(self, file):
+        self.file = file
+        self.metrics = []
+
+    def addMetric(self, metric):
+        self.metrics.append(metric)
+
+    def runTest(self):
+        tokenizer = TextFileTokenizer(self.file)
+        history = ["beg"]
+        for (type, token) in tokenizer:
+            for metric in self.metrics:
+                metric.measure(history, token)
+            history.append(token)
+
+class EntropyMetric:
+    def __init__(self, languageModel):
+        self.languageModel = languageModel
+        self.entropy = 0
+        self.tokenCnt = 0
+
+    def measure(self, history, token):
+        context = history[-(N-1):]
+        cnt, probContext = self.languageModel.getProbability(context)
+        if probContext == 0:
+            self.entropy += float("inf")
+        else:
+            cnt, probNgram = self.languageModel.getProbability(context + [token])
+            self.entropy += -log(probNgram/probContext, 2)
+        self.tokenCnt += 1
+
+    def getResult(self):
+        entropyPerToken = self.entropy / self.tokenCnt
+        return 2**entropyPerToken
+
+class QwertyMetric:
+    pass
+class BikeyboardMetric:
+    pass
+class SuggesitionsMetric:
+    pass
+
 # linear interpolation
 # backoff
         
-f = open("../tests/kopete.txt")
+f = open("../sample-data/povidky.txt")
 os = SimpleLangModel(f)
 f.close()
 
-oa = LaplaceSmoothLM(os, parameter=0.002)
-
-M = N-1
-buffer = (M) * [""]
-
-word = input("Start: ")
-while word != "":
-    buffer = buffer[1:M]
-    buffer.append(word)
-    if buffer[M-1] not in os.search:
-        tips = []
-    else:
-        tips = os.search[buffer[M-1]].keys()
-        #tips = os.search.keys()
-    cnt, probB = oa.getProbability(buffer)
-    tips2 = []
-    for word in tips:
-        cnt, probA = oa.getProbability(buffer + [word])
-        tips2.append((word, log(probA / probB)))
-
-    tips2.sort(key=lambda pair: -pair[1])
-    for tip in tips2[0:20]:
-        print("{}: {}".format(*tip))
 
 
-    word = input()
+t = open("../tests/snoubenci.txt")
+start = 0
+end = 0
+step = 3
+p = pow(10, start)
+for i in range((end-start)*step + 1):
+    oa = LaplaceSmoothLM(os, parameter=p)
+    metric = EntropyMetric(oa)
+    test = AutomatedTest(t)
+    test.addMetric(metric)
+    test.runTest()
+    print("{}\t{}".format(p, metric.getResult()))
+    t.seek(0)
+    p *= pow(10, 1/step)
 
+#print("Perplexity per token:\t{}".format(metric.getResult()))
+
+
+t.close()
+
+#selector = SuggestionSelector(os.search)
+#sorter = SuggestionSorter(oa)
+#
+#M = N-1
+#buffer = (M) * [""]
+#word = input("Start: ")
+#while word != "":
+#    buffer = buffer[1:M]
+#    buffer.append(word)
+#    tips = sorter.getSortedSuggestions(buffer, selector.getSuggestions(buffer))
+#    for tip in tips[0:20]:
+#        print("{}\t\t{}".format(*tip))
+#    word = input()
+#
 
 
 
