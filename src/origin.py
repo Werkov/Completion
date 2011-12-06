@@ -1,5 +1,7 @@
 from math import log
-# coding=utf-8
+import re
+import sys
+
 N = 3 # must be >= 2
 
 class MockLangModel:
@@ -11,20 +13,91 @@ class MockLangModel:
         """Return total count of observed ngrams of given length"""
         return 0
 
+class Tokenizer:
+    """
+    Base for tokenizer classes. Try matching specified patterns.
+    
+    Considered patterns (and tokens returned by _getToken) are spefified
+    within masks list. When ambiguous, first matches.
+    """
+    TYPE_WORD = 1
+    TYPE_NUMBER = 2
+    TYPE_DELIMITER = 3
+    TYPE_OTHER = 4
+    TYPE_WHITESPACE = 5
+
+    masks = [
+        (TYPE_WHITESPACE, "\s+"),
+        (TYPE_WORD, "\w+"),
+        (TYPE_NUMBER, "\d+"),
+        (TYPE_DELIMITER, "[,\\.:;\"'\\-]"),
+        (TYPE_OTHER, ".")
+    ]
+    def __init__(self):
+        self.regexps = []
+        for type, mask in self.masks:
+            self.regexps.append((type, re.compile(mask)))
+        
+    def _getToken(self, string, pos):
+        """Return token starting at the position of the string."""
+        for type, regexp in self.regexps:
+            m = regexp.match(string, pos)
+            if m:
+                return (type, m.group(0))
+        return None
+
+class TextFileTokenizer (Tokenizer):
+    """Parse content of a file into sequence of tokens, skips whitespace and perform true-casing."""
+
+    # Delimiters after which true-casing is applied.
+    sentenceDelimiters = set(".")
+        
+    def __init__(self, file):
+        """Use file-like object as an input"""
+        super(TextFileTokenizer, self).__init__()
+        self.file = file
+        self.currPos = 0
+        self.currLine = ""
+        self.beginSentence = True # used for detecting begining of sentece
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        """Return current token as a tuple (type, stringData) and conforms iterator protocol."""
+        token = Tokenizer.TYPE_WHITESPACE, ""
+        while token[0] == Tokenizer.TYPE_WHITESPACE:
+            if self.currPos == len(self.currLine):
+                self.currLine = self.file.readline()
+                self.currPos = 0
+            if self.currLine == "":
+                raise StopIteration
+            token = self._getToken(self.currLine, self.currPos)
+            self.currPos += len(token[1])
+
+        if token[0] == Tokenizer.TYPE_DELIMITER and token[1] in TextFileTokenizer.sentenceDelimiters:
+            self.beginSentence = True
+        elif self.beginSentence:
+            token = token[0], str.lower(token[1])
+            self.beginSentence = False
+        
+        return token
+
+
 class SimpleLangModel:
     """
-    This model only provides simple statistics from given text.
-    As token is taken everything delimited by whitespace.
+    This model only provides simple statistics from given text file.
     Used for testing.
     """
     delimiter = "__"
-    def __init__(self, text):
+    def __init__(self, file, tokenizer=TextFileTokenizer):
         buffer = N * ['']
         self.ngrams = {} # occurencies for given ngram
         self.ngramCounts = N * [0] # occurencies for given ngram length
         self.ngramUniqueCounts = N * [0] # occurencies of unique ngrams
         self.search = {}
-        for word in text.split():
+        t = tokenizer(file)
+        for type, word in t:
             buffer = buffer[1:N]
             buffer.append(word)
             for order in range(N):
@@ -49,8 +122,6 @@ class SimpleLangModel:
 
     def getProbability(self, ngram):
         order = len(ngram) - 1
-#        if order > N-1:
-#            return 0, 0.0
         key = self._ngramToKey(ngram)
         if key not in self.ngrams:
             return 0.0, 0.0
@@ -79,16 +150,15 @@ class LaplaceSmoothLM:
 # backoff
         
 f = open("../tests/kopete.txt")
-all = " ".join(f.readlines())
+os = SimpleLangModel(f)
 f.close()
 
-os = SimpleLangModel(all)
-oa = LaplaceSmoothLM(os, parameter=0.001)
+oa = LaplaceSmoothLM(os, parameter=0.002)
 
 M = N-1
 buffer = (M) * [""]
 
-word = raw_input("Start: ")
+word = input("Start: ")
 while word != "":
     buffer = buffer[1:M]
     buffer.append(word)
@@ -105,12 +175,13 @@ while word != "":
 
     tips2.sort(key=lambda pair: -pair[1])
     for tip in tips2[0:20]:
-        print """%s: %f""" % tip
-    
-    
-    word = raw_input()
+        print("{}: {}".format(*tip))
+
+
+    word = input()
+
 
 
 
 # run python -i {filename}
-# ask questions like o*.getProbability(["word1", "word2"])
+# write single words and confirm with <enter>
