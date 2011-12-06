@@ -1,3 +1,8 @@
+"""
+Basic implementations of essential classes.
+Module is temporarily named 'origin' as the classes will
+be detached to specific modules when they become more complex.
+"""
 from math import log, sqrt
 import re
 import sys
@@ -146,6 +151,48 @@ class LaplaceSmoothLM:
     def getAllCount(self, length):
         return self.baseLM.getAllCount(length) + self.parameter * (self.vocabularySize ** length)
 
+class NgramLM:
+    """
+    Crops given ngram and behave like model with (M-1) long context
+    """
+    def __init__(self, baseLM, M):
+        self.baseLM = baseLM
+        self.M = M
+
+    def getProbability(self, ngram):
+        if len(ngram) == N:
+            ngram = ngram[-self.M:]
+        else:
+            ngram = ngram[-(self.M-1):] if self.M > 1 else []
+        if len(ngram) == 0:
+            return 0, 1
+        else:
+            return self.baseLM.getProbability(ngram)
+
+    def getAllCount(self, length):
+        return self.baseLM.getAllCount(length)
+    
+class LinearInterLM:
+    def __init__(self, LMs, coeffs):
+        self.baseLMs = LMs
+        self.coeffs = coeffs
+    def getProbability(self, ngram):
+        prob = 0
+        cnt = 0
+        for i in range(len(self.baseLMs)):
+            c,p = self.baseLMs[i].getProbability(ngram)
+            prob += p*self.coeffs[i]
+            cnt += c*self.coeffs[i]
+        return cnt, prob
+        
+
+    def getAllCount(self, length):
+        cnt = 0
+        for i in range(len(self.baseLMs)):
+            c = self.baseLMs[i].getAllCount(length)
+            cnt += c*self.coeffs[i]
+        return cnt
+
 class SuggestionSelector:
     def __init__(self, bigramDict):
         self.search = bigramDict
@@ -179,7 +226,7 @@ class AutomatedTest:
 
     def runTest(self):
         tokenizer = TextFileTokenizer(self.file)
-        history = ["beg"]
+        history = ["beg", "beg"] # TODO
         for (type, token) in tokenizer:
             for metric in self.metrics:
                 metric.measure(history, token)
@@ -199,7 +246,9 @@ class EntropyMetric:
         else:
             cnt, probNgram = self.languageModel.getProbability(context + [token])
             self.entropy += -log(probNgram/probContext, 2)
+            # print("{} | {}\t\t\t\t\t\t\t{:f}\t".format(token, context, log(probNgram/probContext)))
         self.tokenCnt += 1
+
 
     def getResult(self):
         entropyPerToken = self.entropy / self.tokenCnt
@@ -212,50 +261,52 @@ class BikeyboardMetric:
 class SuggesitionsMetric:
     pass
 
-# linear interpolation
-# backoff
-        
-f = open("../sample-data/povidky.txt")
-os = SimpleLangModel(f)
-f.close()
 
-
-
-t = open("../tests/snoubenci.txt")
-start = 0
-end = 0
-step = 3
-p = pow(10, start)
-for i in range((end-start)*step + 1):
-    oa = LaplaceSmoothLM(os, parameter=p)
-    metric = EntropyMetric(oa)
-    test = AutomatedTest(t)
-    test.addMetric(metric)
-    test.runTest()
-    print("{}\t{}".format(p, metric.getResult()))
-    t.seek(0)
-    p *= pow(10, 1/step)
-
-#print("Perplexity per token:\t{}".format(metric.getResult()))
-
-
-t.close()
-
-#selector = SuggestionSelector(os.search)
-#sorter = SuggestionSorter(oa)
+#f = open("../sample-data/povidky.txt")
+#os = SimpleLangModel(f)
+#f.close()
 #
-#M = N-1
-#buffer = (M) * [""]
-#word = input("Start: ")
-#while word != "":
-#    buffer = buffer[1:M]
-#    buffer.append(word)
-#    tips = sorter.getSortedSuggestions(buffer, selector.getSuggestions(buffer))
-#    for tip in tips[0:20]:
-#        print("{}\t\t{}".format(*tip))
-#    word = input()
 #
-
+#
+#t = open("../tests/snoubenci.txt")
+#start = -1
+#end = -1
+#step = 3
+#p = pow(10, start)
+#for i in range((end-start)*step + 1):
+#    oa = LaplaceSmoothLM(os, parameter=p)
+#    um = NgramLM(oa, 1)
+#    bm = NgramLM(oa, 2)
+#    tm = NgramLM(oa, 3)
+#    metric = EntropyMetric(LinearInterLM([um, bm, tm], [0.0,0.0,1.0]))
+#    test = AutomatedTest(t)
+#    test.addMetric(metric)
+#    test.runTest()
+#    print("{}\t{}".format(p, metric.getResult()))
+#    t.seek(0)
+#    p *= pow(10, 1/step)
+#
+#
+##print("Perplexity per token:\t{}".format(metric.getResult()))
+#
+#
+#t.close()
+#
+##selector = SuggestionSelector(os.search)
+##sorter = SuggestionSorter(oa)
+##
+##M = N-1
+##buffer = (M) * [""]
+##word = input("Start: ")
+##while word != "":
+##    buffer = buffer[1:M]
+##    buffer.append(word)
+##    tips = sorter.getSortedSuggestions(buffer, selector.getSuggestions(buffer))
+##    for tip in tips[0:20]:
+##        print("{}\t\t{}".format(*tip))
+##    word = input()
+##
+#
 
 
 # run python -i {filename}
