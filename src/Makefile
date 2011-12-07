@@ -1,6 +1,6 @@
 .PHONY: dependency
 dependency: data.plt
-	gnuplot per.plt -p
+	gnuplot -persist per.plt
 
 data.plt:
 	python3 test.py > $@
