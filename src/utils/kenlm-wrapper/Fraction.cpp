@@ -15,7 +15,7 @@ num::Fraction num::Fraction::reduce() {
     int g = gcd(this->a, this->b);
     return num::Fraction(this->a / g, this->b / g);
 }
-value_type num::Fraction::val() {
+num::value_type num::Fraction::val() {
     return (double)this->a / this->b;
 }
 
