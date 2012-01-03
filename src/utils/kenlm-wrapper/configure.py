@@ -6,9 +6,6 @@ import sipconfig
 # system.
 build_file = "config.sbf"
 
-kenlm_bin = [os.path.abspath("../../../libs/kenlm/bin/lm"), os.path.abspath("../../../libs/kenlm/bin/util")]
-kenlm_src = [os.path.abspath("../../../libs/kenlm")]
-
 # Get the SIP configuration information.
 config = sipconfig.Configuration()
 
@@ -24,8 +21,11 @@ makefile = sipconfig.SIPModuleMakefile(config, build_file, install_dir=os.path.a
 # ".dll" extension on Windows).
 makefile.extra_libs = ["z"]
 
-makefile.extra_lflags = [" ".join([os.path.join(bin, "*.o") for bin in kenlm_bin])]
-makefile.extra_include_dirs = kenlm_src
+extra_bin_dirs = [os.path.abspath("../../../libs/kenlm/bin/lm"), os.path.abspath("../../../libs/kenlm/bin/util")]
+
+#makefile.extra_lflags = [" ".join([os.path.join(bin, "*.o") for bin in extra_bin_dirs])]
+makefile.extra_include_dirs = [os.path.abspath("../../../libs/kenlm")]
+makefile.extra_lflags = ["Fraction.o", "Vocabulary-wrapper.o"]
 
 # Generate the Makefile itself.
 makefile.generate()
