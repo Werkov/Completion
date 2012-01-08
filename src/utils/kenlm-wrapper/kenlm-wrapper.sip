@@ -25,31 +25,56 @@ namespace lm {
 
 %MappedType StringPiece {
 %TypeHeaderCode
-#include "util/string_piece.hh"
+#include "util/string_piece.hh" // needs compilation with -DHAVE_ICU
 %End
 %ConvertFromTypeCode
-     const char *s = sipCpp->as_string().c_str();
-     return PyBytes_FromString(s);
+     return PyUnicode_FromStringAndSize(sipCpp->data(), sipCpp->size());
+%End
+
+%ConvertToTypeCode
+         // Allow a Python string whenever a string is expected.
+        if (sipIsErr == NULL)
+             return PyUnicode_Check(sipPy);
+
+         if (sipPy == Py_None) {
+             *sipCppPtr = NULL;
+             return 0;
+         }
+         if (PyUnicode_Check(sipPy)) {
+             *sipCppPtr = new StringPiece(PyBytes_AS_STRING(PyUnicode_AsUTF8String(sipPy)));
+             return 0;
+         }
+         //*sipCppPtr = (std::string*)sipForceConvertTo_std_string(sipPy,sipIsErr);
+         *sipCppPtr = 0;
+         return 1;
+%End
+};
+
+%MappedType std::string {
+%TypeHeaderCode
+#include <string>
+%End
+%ConvertFromTypeCode
+     const char *s = sipCpp->c_str();
+     return PyUnicode_FromString(s);
 %End
 
 %ConvertToTypeCode
          // Allow a Python string whenever a string is expected.
          if (sipIsErr == NULL)
-             return PyBytes_Check(sipPy);
+             return PyUnicode_Check(sipPy);
          if (sipPy == Py_None) {
              *sipCppPtr = NULL;
              return 0;
          }
-         if (PyBytes_Check(sipPy)) {
-             *sipCppPtr = new StringPiece(PyBytes_AS_STRING(sipPy));
+         if (PyUnicode_Check(sipPy)) {
+             *sipCppPtr = new std::string(PyBytes_AS_STRING(PyUnicode_AsUTF8String(sipPy)));
              return 0;
          }
-         // *sipCppPtr = (StringPiece *)sipForceConvertTo_std_string(sipPy,sipIsErr);
+         //*sipCppPtr = (std::string*)sipForceConvertTo_std_string(sipPy,sipIsErr);
          *sipCppPtr = 0;
          return 1;
 %End
-
-
 };
 
 class Vocabulary {
@@ -69,9 +94,9 @@ class Model {
 #include "Model-wrapper.h"
 %End
 public:
-    Model(PyObject* filename);
+    Model(const std::string &str);
     Vocabulary GetVocabulary();
-    State BeginSentenceState();
-    State NullContextState()
-    double Score(const State& inState, lm::WordIndex word, State& outState);
+    //State BeginSentenceState();
+    //State NullContextState();
+    //double Score(const State& inState, lm::WordIndex word, State& outState);
 };
