@@ -1,13 +1,14 @@
 TARGET = kenlm-wrapper.o
-OFILES = Model-wrapper.o Vocabulary-wrapper.o
-HFILES = Model-wrapper.h Vocabulary-wrapper.h
+OFILES = Model-wrapper.o Vocabulary-wrapper.o wrapper-helper.o
+HFILES = Model-wrapper.h Vocabulary-wrapper.h wrapper-helper.h
 
+SHELL=/bin/bash
 CC = gcc
 CXX = g++ 
 LINK = ld
-CPPFLAGS = -DNDEBUG -DHAVE_ICU -I. -I/afs/ms.mff.cuni.cz/u/k/koutnym/bc/Completion/libs/kenlm -I/usr/include/python3.1
+CPPFLAGS = -DNDEBUG -DHAVE_ICU -I. -I/media/data/Michal/School/bc/Completion/libs/kenlm -I/usr/include/python3.2mu
 CFLAGS = -O2 -Wall -W
-CXXFLAGS = -O2 -Wall -W `pkg-config --libs --cflags icu-uc icu-io` 
+CXXFLAGS = -O2 -Wall -W 
 LFLAGS = -r
 LIBS = -lz
 .SUFFIXES: .c .o .cpp .cc .cxx .C

@@ -1,26 +1,48 @@
 %Module kenlm 0
 
-namespace num{
 
-typedef double value_type;
-
-class Fraction{
-%TypeHeaderCode
-#include "Fraction.h"
+%ModuleHeaderCode
+#include "wrapper-helper.h"
+#include <iostream>
+const unsigned char kMaxOrder = 6;
 %End
-public:
-    Fraction();
-    Fraction(int a, int b);
-    num::Fraction add(num::Fraction b);
-    num::Fraction reduce();
-    num::value_type val();
-    int a;
-    int b;
-};
-};
 
 namespace lm {
     typedef unsigned int WordIndex;
+};
+
+
+
+
+
+%MappedType lm::ngram::State {
+%TypeHeaderCode
+    #include "lm/model.hh"
+%End
+
+%ConvertFromTypeCode
+    return MyPyList_FromState(sipCpp);
+%End
+
+%ConvertToTypeCode
+         // Allow a Python string whenever a string is expected.
+        if (sipIsErr == NULL)
+             return PyList_Check(sipPy);
+         if (sipPy == Py_None) {
+             *sipCppPtr = NULL;
+             return 0;
+         }
+         if (PyList_Check(sipPy)) {
+             *sipCppPtr = new lm::ngram::State();
+             PyListIntoArray(PyList_GetItem(sipPy, 0), (*sipCppPtr)->words);
+             PyListIntoArray(PyList_GetItem(sipPy, 1), (*sipCppPtr)->backoff);
+             (*sipCppPtr)->length = (unsigned char)PyLong_AsUnsignedLong(PyList_GetItem(sipPy, 2));
+            std::cerr << "list->lm::ngram::State: " << (int)(*sipCppPtr)->length << std::endl;
+             return 0;
+         }
+         *sipCppPtr = 0;
+         return 1;
+%End
 };
 
 %MappedType StringPiece {
@@ -35,7 +57,6 @@ namespace lm {
          // Allow a Python string whenever a string is expected.
         if (sipIsErr == NULL)
              return PyUnicode_Check(sipPy);
-
          if (sipPy == Py_None) {
              *sipCppPtr = NULL;
              return 0;
@@ -96,7 +117,7 @@ class Model {
 public:
     Model(const std::string &str);
     Vocabulary GetVocabulary();
-    //State BeginSentenceState();
-    //State NullContextState();
-    //double Score(const State& inState, lm::WordIndex word, State& outState);
+    lm::ngram::State BeginSentenceState();
+    lm::ngram::State NullContextState();
+    PyObject* Score(const lm::ngram::State& inState, unsigned int word); // return tuple of score + new state
 };

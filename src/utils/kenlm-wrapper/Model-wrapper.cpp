@@ -1,4 +1,5 @@
 #include "Model-wrapper.h"
+#include "wrapper-helper.h"
 
 Model::Model(const std::string &str) {
     try {
@@ -26,6 +27,8 @@ lm::ngram::State Model::NullContextState() {
     return this->model_->NullContextState();
 }
 
-double Model::Score(const lm::ngram::State& inState, lm::WordIndex word, lm::ngram::State& outState) {
-    return this->model_->Score(inState, word, outState);
+PyObject* Model::Score(const lm::ngram::State& inState, unsigned int word) {
+    lm::ngram::State outState = inState;
+    double result = this->model_->Score(inState, (lm::WordIndex)word, outState);
+    return Py_BuildValue("(fO)", result, MyPyList_FromState(&outState));
 }

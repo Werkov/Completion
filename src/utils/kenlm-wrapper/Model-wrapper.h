@@ -14,7 +14,7 @@ public:
     Vocabulary GetVocabulary();
     lm::ngram::State BeginSentenceState();
     lm::ngram::State NullContextState();
-    double Score(const lm::ngram::State& inState, lm::WordIndex word, lm::ngram::State& outState);
+    PyObject* Score(const lm::ngram::State& inState, lm::WordIndex word);
 private:
     lm::ngram::Model* model_;
 };

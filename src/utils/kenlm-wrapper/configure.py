@@ -19,13 +19,13 @@ makefile = sipconfig.SIPModuleMakefile(config, build_file, install_dir=os.path.a
 # Add the library we are wrapping.  The name doesn't include any platform
 # specific prefixes or extensions (e.g. the "lib" prefix on UNIX, or the
 # ".dll" extension on Windows).
-makefile.extra_libs = ["z"]
+makefile.extra_libs = ["z", "icuio",  "icui18n", "icuuc", "icudata"] # got grom icu-config
 
 extra_bin_dirs = [os.path.abspath("../../../libs/kenlm/bin/lm"), os.path.abspath("../../../libs/kenlm/bin/util")]
 
 # makefile.extra_lflags = [" ".join([os.path.join(bin, "*.o") for bin in extra_bin_dirs])] # unnecessary, included in kenlm-wrapper.o
 makefile.extra_include_dirs = [os.path.abspath("../../../libs/kenlm")]
-makefile.extra_lflags = ["Fraction.o", "kenlm-wrapper.o", "`pkg-config --libs --cflags icu-uc icu-io`"]
+makefile.extra_lflags = ["kenlm-wrapper.o"]
 makefile.extra_defines = ["HAVE_ICU"]
 
 
