@@ -1,6 +1,6 @@
 TARGET = kenlm-wrapper.o
-OFILES = Model-wrapper.o Vocabulary-wrapper.o wrapper-helper.o
-HFILES = Model-wrapper.h Vocabulary-wrapper.h wrapper-helper.h
+OFILES = Model-wrapper.o Vocabulary-wrapper.o wrapper-helper.o token-dictionary.o
+HFILES = Model-wrapper.h Vocabulary-wrapper.h wrapper-helper.h token-dictionary.h
 
 SHELL=/bin/bash
 CC = gcc

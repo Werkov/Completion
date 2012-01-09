@@ -1,3 +1,4 @@
 on Ubuntu needs packages:
 python3-sip 
 python3-sip-dev
+libicu-dev

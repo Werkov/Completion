@@ -106,8 +106,8 @@ public:
     lm::WordIndex BeginSentence() const;
     lm::WordIndex EndSentence() const;
     lm::WordIndex NotFound() const;
-
     lm::WordIndex Index(const StringPiece &str) const;
+    PyObject* GetTokens() const; // Return whole vocabulary of associated model as a tuple (immutable list).
 };
 
 class Model {
