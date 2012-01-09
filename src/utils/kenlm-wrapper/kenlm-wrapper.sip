@@ -15,6 +15,7 @@ namespace lm {
 
 
 
+// State is converted to three-item list in accordance to lm::ngram::State public fields.
 %MappedType lm::ngram::State {
 %TypeHeaderCode
     #include "lm/model.hh"
@@ -45,6 +46,9 @@ namespace lm {
 %End
 };
 
+//
+// Strings are stored as UTF-8 encoded strings (null terminated in std::string)
+//
 %MappedType StringPiece {
 %TypeHeaderCode
 #include "util/string_piece.hh" // needs compilation with -DHAVE_ICU
@@ -100,24 +104,37 @@ namespace lm {
 
 class Vocabulary {
 %TypeHeaderCode
-#include "Vocabulary-wrapper.h"
+#include "vocabulary-wrapper.h"
 %End
 public:
     lm::WordIndex BeginSentence() const;
     lm::WordIndex EndSentence() const;
     lm::WordIndex NotFound() const;
     lm::WordIndex Index(const StringPiece &str) const;
-    PyObject* GetTokens() const; // Return whole vocabulary of associated model as a tuple (immutable list).
+%Docstring
+Convert string into vocabulary entry index.
+%End
+    PyObject* GetTokens() const; //
+%Docstring
+Return whole vocabulary of associated model as a tuple (immutable list).
+%End
 };
 
 class Model {
 %TypeHeaderCode
-#include "Model-wrapper.h"
+#include "model-wrapper.h"
 %End
 public:
     Model(const std::string &str);
     Vocabulary GetVocabulary();
+%Docstring
+Return wrapped vocabulary object. Useful for converting tokens to vocabulary index and listing whole vocabulary.
+%End
     lm::ngram::State BeginSentenceState();
     lm::ngram::State NullContextState();
     PyObject* Score(const lm::ngram::State& inState, unsigned int word); // return tuple of score + new state
+%Docstring
+Return tuple (prob, state), where 'prob' is conditional probability of 'word' given context 'inState'.
+'state' is context after the word.
+%End
 };

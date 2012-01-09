@@ -1,0 +1,6 @@
+*.o
+sip*
+Makefile.generated
+kenlm.so
+kenlm.exp
+config.sbf

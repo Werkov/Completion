@@ -1,4 +1,4 @@
-#include "Model-wrapper.h"
+#include "model-wrapper.h"
 
 Model::Model(const std::string &str) {
     try {

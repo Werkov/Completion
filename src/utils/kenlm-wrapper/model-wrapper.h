@@ -4,7 +4,7 @@
 #include <sip.h>
 #include <string>
 #include "lm/model.hh"
-#include "Vocabulary-wrapper.h"
+#include "vocabulary-wrapper.h"
 #include "wrapper-helper.h"
 #include "token-dictionary.h"
 
