@@ -18,6 +18,10 @@ class MockLangModel:
         """Return total count of observed ngrams of given length"""
         return 0
 
+class MockLangModelB:
+    def getProbability(self, context, token):
+        return 0
+
 class Tokenizer:
     """
     Base for tokenizer classes. Try matching specified patterns.
@@ -90,7 +94,27 @@ class TextFileTokenizer (Tokenizer):
         
         return token
 
+class SimpleTriggerModel:
+    def __init__(self):
+        self.reset()
 
+    def reset(self):
+        self.dictionary = set()
+        self._lastPosition = {}
+        self.currentPosition = 0
+
+    def add(self, token):
+        self.dictionary.add(token)
+        self._lastPosition[token] = self.currentPosition
+        self.currentPosition += 1
+
+    def getProbability(self, context, token):
+        if token in self.dictionary:
+            return 1/len(self.dictionary)
+        else:
+            return 0
+        
+            
 class SimpleLangModel:
     """
     This model only provides simple statistics from given text file.
@@ -225,11 +249,10 @@ class SuggestionSorter:
     def __init__(self, languageModel):
         self.languageModel = languageModel
     def getSortedSuggestions(self, context, suggestions):
-        cnt, probContext = self.languageModel.getProbability(context)
         tips = []
         for token in suggestions:
-            cnt, probNgram = self.languageModel.getProbability(context + [token])
-            tips.append((token, log(probNgram / probContext)))
+            prob = self.languageModel.getProbability(context, token)
+            tips.append((token, prob))
 
         tips.sort(key=lambda pair: -pair[1])
         return tips
@@ -280,52 +303,3 @@ class SuggesitionsMetric:
     pass
 
 
-#f = open("../sample-data/povidky.txt")
-#os = SimpleLangModel(f)
-#f.close()
-#
-#
-#
-#t = open("../tests/snoubenci.txt")
-#start = -1
-#end = -1
-#step = 3
-#p = pow(10, start)
-#for i in range((end-start)*step + 1):
-#    oa = LaplaceSmoothLM(os, parameter=p)
-#    um = NgramLM(oa, 1)
-#    bm = NgramLM(oa, 2)
-#    tm = NgramLM(oa, 3)
-#    metric = EntropyMetric(LinearInterLM([um, bm, tm], [0.0,0.0,1.0]))
-#    test = AutomatedTest(t)
-#    test.addMetric(metric)
-#    test.runTest()
-#    print("{}\t{}".format(p, metric.getResult()))
-#    t.seek(0)
-#    p *= pow(10, 1/step)
-#
-#
-##print("Perplexity per token:\t{}".format(metric.getResult()))
-#
-#
-#t.close()
-#
-##selector = SuggestionSelector(os.search)
-##sorter = SuggestionSorter(oa)
-##
-##M = N-1
-##buffer = (M) * [""]
-##word = input("Start: ")
-##while word != "":
-##    buffer = buffer[1:M]
-##    buffer.append(word)
-##    tips = sorter.getSortedSuggestions(buffer, selector.getSuggestions(buffer))
-##    for tip in tips[0:20]:
-##        print("{}\t\t{}".format(*tip))
-##    word = input()
-##
-#
-
-
-# run python -i {filename}
-# write single words and confirm with <enter>

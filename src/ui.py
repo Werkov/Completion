@@ -5,14 +5,16 @@ from PyQt4 import QtGui
 from origin import *
 
 # training data
-f = open("../sample-data/povidky.txt")
-os = SimpleLangModel(f)
-f.close()
+#f = open("../sample-data/povidky.txt")
+#os = SimpleLangModel(f)
+#f.close()
+#
+#oa = LaplaceSmoothLM(os, parameter=0.1)
 
-oa = LaplaceSmoothLM(os, parameter=0.1)
+tm = SimpleTriggerModel()
 
-selector = SuggestionSelector(os.search)
-sorter = SuggestionSorter(oa)
+selector = SuggestionSelector(dict=tm.dictionary)
+sorter = SuggestionSorter(tm)
 
 # ask user and show him suggestions until empty string is given
 
@@ -93,6 +95,7 @@ class Autocomplete(QtGui.QTextEdit):
             if token[0] != Tokenizer.TYPE_WHITESPACE:
                 self.context = self.context[1:len(self.context)]
                 self.context.append(token[1])
+                tm.add(token[1])
 
         if prefix == None or prefix[0] == Tokenizer.TYPE_WHITESPACE:
             prefix = None
