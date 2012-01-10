@@ -3,9 +3,12 @@ Basic implementations of essential classes.
 Module is temporarily named 'origin' as the classes will
 be detached to specific modules when they become more complex.
 """
-from math import log, sqrt
-import re
+from math import log
+from math import sqrt
 import sys
+
+import re
+from utils import kenlm
 
 N = 3 # must be >= 2
 
@@ -110,10 +113,24 @@ class SimpleTriggerModel:
 
     def getProbability(self, context, token):
         if token in self.dictionary:
-            return 1/len(self.dictionary)
+            return 1 / len(self.dictionary)
         else:
             return 0
-        
+
+class KenLMModel:
+    def __init__(self, filename):
+        self._model = kenlm.Model(filename)
+        self.dictionary = self._model.GetVocabulary().GetTokens()
+
+    def getProbability(self, context, token):
+        state = self._model.NullContextState()
+        v = self._model.GetVocabulary()
+        # shift model to correct state
+        for pretoken in context:
+            prob, state = self._model.Score(state, v.Index(pretoken))
+
+        prob, _ = self._model.Score(state, v.Index(token))
+        return prob
             
 class SimpleLangModel:
     """
@@ -206,9 +223,9 @@ class LinearInterLM:
         prob = 0
         cnt = 0
         for i in range(len(self.baseLMs)):
-            c,p = self.baseLMs[i].getProbability(ngram)
-            prob += p*self.coeffs[i]
-            cnt += c*self.coeffs[i]
+            c, p = self.baseLMs[i].getProbability(ngram)
+            prob += p * self.coeffs[i]
+            cnt += c * self.coeffs[i]
         return cnt, prob
         
 
@@ -216,15 +233,15 @@ class LinearInterLM:
         cnt = 0
         for i in range(len(self.baseLMs)):
             c = self.baseLMs[i].getAllCount(length)
-            cnt += c*self.coeffs[i]
+            cnt += c * self.coeffs[i]
         return cnt
 
 class SuggestionSelector:
-    def __init__(self, bigramDict = None, dict = None):
+    def __init__(self, bigramDict=None, dict=None):
         self.bigramDict = bigramDict
         self.dict = dict
 
-    def getSuggestions(self, context, prefix = None):
+    def getSuggestions(self, context, prefix=None):
         lastToken = context[len(context)-1]
         if self.bigramDict == None and self.dict == None:
             return []
@@ -286,14 +303,14 @@ class EntropyMetric:
             self.entropy += float("inf")
         else:
             cnt, probNgram = self.languageModel.getProbability(context + [token])
-            self.entropy += -log(probNgram/probContext, 2)
+            self.entropy += -log(probNgram / probContext, 2)
             # print("{} | {}\t\t\t\t\t\t\t{:f}\t".format(token, context, log(probNgram/probContext)))
         self.tokenCnt += 1
 
 
     def getResult(self):
         entropyPerToken = self.entropy / self.tokenCnt
-        return 2**entropyPerToken
+        return 2 ** entropyPerToken
 
 class QwertyMetric:
     pass

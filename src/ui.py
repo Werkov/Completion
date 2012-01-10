@@ -12,9 +12,14 @@ from origin import *
 #oa = LaplaceSmoothLM(os, parameter=0.1)
 
 tm = SimpleTriggerModel()
+klm = KenLMModel("../sample-data/povidky.arpa")
 
-selector = SuggestionSelector(dict=tm.dictionary)
-sorter = SuggestionSorter(tm)
+#selector = SuggestionSelector(dict=tm.dictionary)
+#sorter = SuggestionSorter(tm)
+
+selector = SuggestionSelector(dict=klm.dictionary)
+sorter = SuggestionSorter(klm)
+
 
 # ask user and show him suggestions until empty string is given
 
