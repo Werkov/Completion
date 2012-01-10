@@ -35,9 +35,13 @@ class Tokenizer:
         (TYPE_WHITESPACE, "\s+"),
         (TYPE_WORD, "\w+"),
         (TYPE_NUMBER, "\d+"),
-        (TYPE_DELIMITER, "[,\\.:;\"'\\-]"),
+        (TYPE_DELIMITER, "[,\\.:;\"'\\-\\?!]"),
         (TYPE_OTHER, ".")
     ]
+
+    # Delimiters after which e.g. true-casing is applied.
+    sentenceDelimiters = set([".", "?", "!"])
+
     def __init__(self):
         self.regexps = []
         for type, mask in self.masks:
@@ -53,9 +57,7 @@ class Tokenizer:
 
 class TextFileTokenizer (Tokenizer):
     """Parse content of a file into sequence of tokens, skips whitespace and perform true-casing."""
-
-    # Delimiters after which true-casing is applied.
-    sentenceDelimiters = set(".")
+  
         
     def __init__(self, file):
         """Use file-like object as an input"""
@@ -80,7 +82,7 @@ class TextFileTokenizer (Tokenizer):
             token = self._getToken(self.currLine, self.currPos)
             self.currPos += len(token[1])
 
-        if token[0] == Tokenizer.TYPE_DELIMITER and token[1] in TextFileTokenizer.sentenceDelimiters:
+        if token[0] == Tokenizer.TYPE_DELIMITER and token[1] in Tokenizer.sentenceDelimiters:
             self.beginSentence = True
         elif self.beginSentence:
             token = token[0], str.lower(token[1])
@@ -194,14 +196,30 @@ class LinearInterLM:
         return cnt
 
 class SuggestionSelector:
-    def __init__(self, bigramDict):
-        self.search = bigramDict
-    def getSuggestions(self, context):
+    def __init__(self, bigramDict = None, dict = None):
+        self.bigramDict = bigramDict
+        self.dict = dict
+
+    def getSuggestions(self, context, prefix = None):
         lastToken = context[len(context)-1]
-        if lastToken not in self.search:
+        if self.bigramDict == None and self.dict == None:
             return []
-        else:
-            return self.search[lastToken].keys()
+        elif self.bigramDict == None and self.dict != None:
+            if prefix == None:
+                return []
+            else:
+                return [token for token in self.dict if token.startswith(prefix)]
+        else: # bigram is more important  elif self.bigramDict != None and self.dict == None:
+            if prefix != None:
+                if lastToken not in self.bigramDict:
+                    return [token for token in self.bigramDict.keys() if token.startswith(prefix)]
+                else:
+                    return [token for token in self.bigramDict[lastToken].keys() if token.startswith(prefix)]
+            else:
+                if lastToken not in self.bigramDict:
+                    return []
+                else:
+                    return self.bigramDict[lastToken].keys()
 
 class SuggestionSorter:
     def __init__(self, languageModel):

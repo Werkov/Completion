@@ -6,3 +6,21 @@ It can be used:
  - in T9 or iTap like systems,
  - for auto-completion in text editors,
  - in devices for disabled people (writing with one finger, eye movements, etc.).
+
+Dependecies
+-----------
+Needs Python3, PyQt4 for Python3, ICU library and SIP framework.
+Partially it could be installed from these Ubuntu packages:
+	- python3-sip 
+	- python3-sip-dev
+	- libicu-dev
+
+Alas, current Ubuntu repositories don't contain PyQt4 for Python3, therefore
+they must be installed manually:
+	- download from:
+		- http://www.riverbankcomputing.co.uk/software/sip/download
+		- http://www.riverbankcomputing.co.uk/software/pyqt/download
+	- run (first SIP, then PyQt4):
+		- python3 configure.py
+		- make
+		- sudo make install
