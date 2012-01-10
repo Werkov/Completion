@@ -13,11 +13,12 @@ from origin import *
 
 tm = SimpleTriggerModel()
 klm = KenLMModel("../sample-data/povidky.arpa")
-
+slm = SimpleLangModel(open("../sample-data/povidky.txt")) # only for dictionary
 #selector = SuggestionSelector(dict=tm.dictionary)
 #sorter = SuggestionSorter(tm)
 
-selector = SuggestionSelector(dict=klm.dictionary)
+#selector = SuggestionSelector(dict=klm.dictionary)
+selector = SuggestionSelector(bigramDict=slm.search)
 sorter = SuggestionSorter(klm)
 
 
@@ -28,6 +29,8 @@ class TextInputTokenizer(Tokenizer):
     def __init__(self):
         super(TextInputTokenizer, self).__init__()
         self.lastTokenEnd = 0
+    def setCursor(self, position):
+        self.lastTokenEnd = min(self.lastTokenEnd, position)
 
     def getToken(self, text):
         tokens = []
@@ -63,7 +66,9 @@ class Window(QtGui.QWidget):
         self.txtInput = Autocomplete(self, self.dbg)
         self.txtInput.resize(640, 200)
 
-        
+    def keyPressEvent(self, e):
+        QtGui.QWidget.keyPressEvent(self, e)
+        print("catched in window " + e.text())
         
     def center(self):
         qr = self.frameGeometry()
@@ -83,7 +88,7 @@ class DebugTrace(QtGui.QListWidget):
             self.addItem(key + ": " + str(value))
             self.keyToRow[key] = self.count() - 1
 
-class Autocomplete(QtGui.QTextEdit):
+class Autocomplete(QtGui.QPlainTextEdit):
     def __init__(self, parent, debugTrace = None):
         super(Autocomplete, self).__init__(parent)
         self.initUI();
@@ -94,7 +99,8 @@ class Autocomplete(QtGui.QTextEdit):
     def keyPressEvent(self, e):
         super(Autocomplete, self).keyPressEvent(e)        
         self.lstSuggestions.move(self.cursorRect().left(), self.cursorRect().top() + self.cursorRect().height())
-
+        cursor = self.textCursor()
+        self.tokenizer.setCursor(cursor.position())
         tokens, prefix = self.tokenizer.getToken(self.toPlainText())
         for token in tokens:
             if token[0] != Tokenizer.TYPE_WHITESPACE:
@@ -120,12 +126,12 @@ class Autocomplete(QtGui.QTextEdit):
             self.lstSuggestions.setVisible(True)
         else:
             self.lstSuggestions.setVisible(False)
-        
 
+ 
     def initUI(self):
-        self.lstSuggestions = QtGui.QListWidget(self)        
+        self.lstSuggestions = QtGui.QListWidget(self)
         self.lstSuggestions.setVisible(False)
-
+ 
 
 def main():
     app = QtGui.QApplication(sys.argv)
