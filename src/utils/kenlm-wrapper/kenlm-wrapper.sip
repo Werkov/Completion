@@ -38,7 +38,6 @@ namespace lm {
              PyListIntoArray(PyList_GetItem(sipPy, 0), (*sipCppPtr)->words);
              PyListIntoArray(PyList_GetItem(sipPy, 1), (*sipCppPtr)->backoff);
              (*sipCppPtr)->length = (unsigned char)PyLong_AsUnsignedLong(PyList_GetItem(sipPy, 2));
-            std::cerr << "list->lm::ngram::State: " << (int)(*sipCppPtr)->length << std::endl;
              return 0;
          }
          *sipCppPtr = 0;

@@ -2,15 +2,10 @@
 
 Model::Model(const std::string &str) {
     try {
-        std::cerr << "Beg" << std::endl;
         lm::ngram::Config config;
-        std::cerr << "A" << std::endl;
         this->enumerate_vocab_ = new TokenDictionary();
-        std::cerr << "B" << std::endl;
         config.enumerate_vocab = static_cast<lm::EnumerateVocab*>(this->enumerate_vocab_);
-        std::cerr << "C" << std::endl;
         this->model_ = new lm::ngram::Model(str.c_str(), config);
-        std::cerr << "D" << std::endl;
     } catch (util::ErrnoException) {
         this->model_ = 0;
 //        delete this->enumerate_vocab_;
@@ -25,7 +20,6 @@ Model::Model(const std::string &str) {
 //}
 
 Vocabulary Model::GetVocabulary() {
-    std::cerr << "cD" << std::endl;
     return Vocabulary(&this->model_->GetVocabulary(), this->enumerate_vocab_);
     if(!this->vocabulary.IsWrapping()){
         this->vocabulary = Vocabulary(&this->model_->GetVocabulary(), this->enumerate_vocab_);
