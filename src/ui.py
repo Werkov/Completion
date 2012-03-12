@@ -76,109 +76,57 @@ class DictionaryCompleter(QtGui.QCompleter):
         self.setModel(model)
         self.popup().setModelColumn(self.LABEL_COL)
 
+class CompletionListView(QtGui.QListWidget):
+    def keyPressEvent(self, event):
+        event.ignore() # send it higher
+
 class CompletionTextEdit(QtGui.QPlainTextEdit):
+    suggestions = ["mouka", "evoluční", "prokaryotický", "nejstrategičtější", "nejstrašidelnější", "pracný", "prachový", "pomeranč"]
     def __init__(self, parent=None):
         super(CompletionTextEdit, self).__init__(parent)
         self.setMinimumWidth(400)
-        self.setPlainText("")
-        self.completer = None
-        self.moveCursor(QtGui.QTextCursor.End)
+#        self.setPlainText("")
+#        self.moveCursor(QtGui.QTextCursor.End)
         self.tokenizer = None
-        self.context = (3-1) * [""] # 3 should be global variable from origin
-
-    def setCompleter(self, completer):
-        if self.completer:
-            self.disconnect(self.completer, 0, self, 0)
-        if not completer:
-            return
-
-        completer.setWidget(self)
-        completer.setCompletionMode(QtGui.QCompleter.PopupCompletion)
-        completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        self.completer = completer
-        #self.completer.activated[QtCore.QModelIndex].connect(self.insertCompletion)
-        self.completer.activated[str].connect(self.insertCompletion)
-        #self.completer.highlighted[str].connect(self.insertCompletion)
+        self.popup = CompletionListView(self)
+        self.popup.addItem("xerxes")
+        self.popup.addItem("yerxes")
+        self.popup.addItem("zerxes")
+        self.popup.addItem("aerxes")
+        self.popup.setVisible(False)
+        
         
     def setTokenizer(self, tokenizer):
         self.tokenizer = tokenizer
     
-    def textUnderCursor(self):
-        tc = self.textCursor()
-        tc.select(QtGui.QTextCursor.WordUnderCursor)
-        return tc.selectedText()
-    
-    def insertCompletion(self, completion):
-        tc = self.textCursor()
-        extra = len(completion) - len(self.completer.completionPrefix())
-        fillin = completion[-extra:] if extra > 0 else ""
-        append = self.completer.acceptChar() if self.completer.acceptChar() != None else " "
-        tc.insertText(fillin + append)
-        self.setTextCursor(tc)
-
-    def focusInEvent(self, event):
-        if self.completer:
-            self.completer.setWidget(self);
-        QtGui.QPlainTextEdit.focusInEvent(self, event)
 
     def keyPressEvent(self, event):
-        if self.completer and self.completer.popup().isVisible():
-            if event.key() in (
-            QtCore.Qt.Key_Enter,
-            QtCore.Qt.Key_Return,
-            QtCore.Qt.Key_Escape,
-            QtCore.Qt.Key_Tab,
-            QtCore.Qt.Key_Backtab):
-                event.ignore()
-                return
+        QtGui.QPlainTextEdit.keyPressEvent(self, event)
+        # find prefix
+        tc = self.textCursor()
+        tc.select(QtGui.QTextCursor.WordUnderCursor)
+        prefix = tc.selectedText();
 
-        ## has ctrl-space been pressed??
-        isShortcut = (event.modifiers() == QtCore.Qt.ControlModifier and
-                      event.key() == QtCore.Qt.Key_Space)
-        if (not self.completer or not isShortcut):
-            QtGui.QPlainTextEdit.keyPressEvent(self, event)
-
-        ## ctrl or shift key on it's own??
-        ctrlOrShift = event.modifiers() in (QtCore.Qt.ControlModifier ,
-                QtCore.Qt.ShiftModifier)
-        if ctrlOrShift and event.text() == "":
-            # ctrl or shift key on it's own
+        # fill suggestions
+        suggestions = [w for w in self.suggestions if w.startswith(prefix)]
+        if len(suggestions) == 0:
+            self.popup.setVisible(False)
             return
 
+        self.popup.clear()
+        for w in suggestions:
+            self.popup.addItem(w)
+        self.popup.setVisible(True)
 
-        hasModifier = ((event.modifiers() != QtCore.Qt.NoModifier) and not ctrlOrShift)
+        first = suggestions[0]
+        cursor = self.textCursor()
+        cursor.insertText(first[len(prefix):])
+        cursor.movePosition(QtGui.QTextCursor.Left, QtGui.QTextCursor.KeepAnchor, len(first)-len(prefix))
+        self.setTextCursor(cursor)
 
-        #completionPrefix = self.textUnderCursor()
-
-        self.tokenizer.setCursor(self.textCursor().position())
-        tokens, prefix = self.tokenizer.getToken(self.toPlainText())
-        for token in tokens:
-            if token[0] != Tokenizer.TYPE_WHITESPACE:
-                self.context = self.context[1:len(self.context)]
-                self.context.append(token[1])
-#                tm.add(token[1]) # important control point -- sending words to model
-
-        if prefix == None or prefix[0] == Tokenizer.TYPE_WHITESPACE:
-            prefix = None
-            completionPrefix = ""
-        else:
-            prefix = prefix[1]
-            completionPrefix = prefix
         
-        if (not isShortcut and (hasModifier or event.text() == "" or
-        len(completionPrefix) < 0)):
-            self.completer.popup().hide()
-            return
-
-        if (completionPrefix != self.completer.completionPrefix()):
-            self.completer.update(self.context, prefix, self.toPlainText())
-            self.completer.setCompletionPrefix(completionPrefix)
-            popup = self.completer.popup()
-            popup.setCurrentIndex(self.completer.completionModel().index(0,0))
-
-        cr = self.cursorRect()
-        cr.setWidth(self.completer.popup().sizeHintForColumn(0) + self.completer.popup().verticalScrollBar().sizeHint().width())
-        self.completer.complete(cr) ## pop it up!
+        self.popup.move(self.cursorRect().right(), self.cursorRect().bottom())
+        print("Key: {}".format(prefix))
 
  
 
