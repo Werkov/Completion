@@ -78,55 +78,159 @@ class DictionaryCompleter(QtGui.QCompleter):
 
 class CompletionListView(QtGui.QListWidget):
     def keyPressEvent(self, event):
-        event.ignore() # send it higher
+        event.ignore()
+
+    def selectionMove(self, shift):
+        if self.count() == 0:
+            return
+        row = self.currentRow()
+        print("Current: ", row)
+        row += shift
+        row = (self.count() + row) % self.count()
+        self.setCurrentRow(row)
+        
 
 class CompletionTextEdit(QtGui.QPlainTextEdit):
     suggestions = ["mouka", "evoluční", "prokaryotický", "nejstrategičtější", "nejstrašidelnější", "pracný", "prachový", "pomeranč"]
+    Popup_Hidden = 0
+    Popup_Visible = 1
+    Popup_Focused = 2
+
+    UserReason = 0
+    InnerReason = 1
+
     def __init__(self, parent=None):
         super(CompletionTextEdit, self).__init__(parent)
         self.setMinimumWidth(400)
 #        self.setPlainText("")
 #        self.moveCursor(QtGui.QTextCursor.End)
         self.tokenizer = None
-        self.popup = CompletionListView(self)
-        self.popup.addItem("xerxes")
-        self.popup.addItem("yerxes")
-        self.popup.addItem("zerxes")
-        self.popup.addItem("aerxes")
-        self.popup.setVisible(False)
+        self._initPopup()
+        self.cursorPositionChanged.connect(self._cursorPositionChangedHandler)
+        self.cursorMoveReason = self.UserReason
         
+    def _initPopup(self):
+        self.popup = CompletionListView(self)
+        self.setPopupState(self.Popup_Hidden)
+
+    def popupState(self):
+        if self.popup.isVisible():
+            return self.Popup_Focused if self.popup.hasFocus() else self.Popup_Visible
+        else:
+            return self.Popup_Hidden
+        
+    def setPopupState(self, state):
+        if state == self.Popup_Hidden:
+            self.popup.setVisible(False)
+            self.setFocus()
+        elif state == self.Popup_Visible:
+            self._refreshPopup()
+            self.popup.setVisible(True)
+            self.setFocus()
+        elif state == self.Popup_Focused:
+            self._refreshPopup()
+            self.popup.setVisible(True)
+            self.popup.setFocus()
+            if self.popup.count() > 0:
+                self.popup.item(0).setSelected(True)
+        else:
+            raise ValueError()
+
+    def _refreshPopup(self):
+        self.popup.move(self.cursorRect().right(), self.cursorRect().bottom())
+        self.popup.clear()
+        self.popup.addItems(self.currentSuggestions())
+
+    def _cursorPositionChangedHandler(self):
+        if self.cursorMoveReason == self.UserReason:
+            self.setPopupState(self.Popup_Hidden)
+        self.cursorMoveReason = self.UserReason
         
     def setTokenizer(self, tokenizer):
         self.tokenizer = tokenizer
-    
 
-    def keyPressEvent(self, event):
-        QtGui.QPlainTextEdit.keyPressEvent(self, event)
+    def currentSuggestions(self):
         # find prefix
         tc = self.textCursor()
         tc.select(QtGui.QTextCursor.WordUnderCursor)
         prefix = tc.selectedText();
 
         # fill suggestions
-        suggestions = [w for w in self.suggestions if w.startswith(prefix)]
-        if len(suggestions) == 0:
-            self.popup.setVisible(False)
-            return
+        return [w for w in self.suggestions if w.startswith(prefix)]
 
-        self.popup.clear()
-        for w in suggestions:
-            self.popup.addItem(w)
-        self.popup.setVisible(True)
+    def keyPressEvent(self, event):
+        handled = False
+        if self.popupState() == self.Popup_Hidden:
+            # manual invokation
+            if event.key() == QtCore.Qt.Key_Space and event.modifiers() & QtCore.Qt.ControlModifier:
+                self.setPopupState(self.Popup_Visible)
+                handled = True
+            elif event.text().isprintable() and event.text() != "":
+                self.cursorMoveReason = self.InnerReason
+                QtGui.QPlainTextEdit.keyPressEvent(self, event)
+                handled = True
+                if len(self.currentSuggestions()) > 0:
+                    self.setPopupState(self.Popup_Visible)
 
-        first = suggestions[0]
-        cursor = self.textCursor()
-        cursor.insertText(first[len(prefix):])
-        cursor.movePosition(QtGui.QTextCursor.Left, QtGui.QTextCursor.KeepAnchor, len(first)-len(prefix))
-        self.setTextCursor(cursor)
+        elif self.popupState() == self.Popup_Visible:
+            # manual hiding
+            if event.key() == QtCore.Qt.Key_Escape:
+                self.setPopupState(self.Popup_Hidden)
+                handled = True
+            # selection change
+            elif event.key() == QtCore.Qt.Key_Up or event.key() == QtCore.Qt.Key_Down:
+                if event.key() == QtCore.Qt.Key_Up:
+                    self.popup.selectionMove(-1)
+                else:
+                    self.popup.selectionMove(1)
+                self.setPopupState(self.Popup_Focused)
+                handled = True
+            elif event.text().isprintable() and event.text() != "":
+                self.cursorMoveReason = self.InnerReason
+                QtGui.QPlainTextEdit.keyPressEvent(self, event)
+                handled = True
+                if len(self.currentSuggestions()) > 0:
+                    self._refreshPopup()
+                else:
+                    self.setPopupState(self.Popup_Hidden)
 
-        
-        self.popup.move(self.cursorRect().right(), self.cursorRect().bottom())
-        print("Key: {}".format(prefix))
+        elif self.popupState() == self.Popup_Focused:
+            # manual hiding
+            if event.key() == QtCore.Qt.Key_Escape:
+                self.setPopupState(self.Popup_Hidden)
+                handled = True
+            # selection change
+            elif event.key() == QtCore.Qt.Key_Up or event.key() == QtCore.Qt.Key_Down:
+                if event.key() == QtCore.Qt.Key_Up:
+                    self.popup.selectionMove(-1)
+                else:
+                    self.popup.selectionMove(1)
+                handled = True
+            elif self._isAcceptKey(event):
+                self.cursorMoveReason = self.InnerReason
+                self._acceptSuggestion()
+                handled = True
+                if len(self.currentSuggestions()) > 0:
+                    self.setPopupState(self.Popup_Visible)
+                else:
+                    self.setPopupState(self.Popup_Hidden)
+            elif event.text().isprintable() and event.text() != "":
+                self.cursorMoveReason = self.InnerReason
+                QtGui.QPlainTextEdit.keyPressEvent(self, event)
+                handled = True
+                if len(self.currentSuggestions()) > 0:
+                    self._refreshPopup()
+                else:
+                    self.setPopupState(self.Popup_Hidden)
 
- 
+        if not handled:
+            QtGui.QPlainTextEdit.keyPressEvent(self, event)
+
+    def _isAcceptKey(self, event):
+        return event.key() in [QtCore.Qt.Key_Tab, QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]
+
+    def _acceptSuggestion(self):
+        tc = self.textCursor()
+        tc.insertText(self.popup.currentItem().text())
+        self.setTextCursor(tc)
 
