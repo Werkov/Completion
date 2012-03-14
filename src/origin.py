@@ -5,6 +5,7 @@ be detached to specific modules when they become more complex.
 """
 from math import log
 from math import sqrt
+import string, unicodedata
 import sys
 
 import re
@@ -235,6 +236,38 @@ class LinearInterLM:
             c = self.baseLMs[i].getAllCount(length)
             cnt += c * self.coeffs[i]
         return cnt
+
+class T9SuggestionSelector:
+    keys = {
+    "a": 2, "b": 2, "c": 2,
+    "d": 3, "e": 3, "f": 3,
+    "g": 4, "h": 4, "i": 4,
+    "j": 5, "k": 5, "l": 5,
+    "m": 6, "n": 6, "o": 6,
+    "p": 7, "q": 7, "r": 7, "s": 7,
+    "t": 8, "u": 8, "v": 8,
+    "w": 9, "x": 9, "y": 9,"z": 9}
+
+    def _normalize(self, text):
+        return ''.join(x for x in unicodedata.normalize('NFKD', text) if x in string.ascii_letters).lower()
+
+    def _toKeypad(self, text):
+        return ''.join([str(self.keys[c]) for c in text])
+    
+    def __init__(self, dict=None):
+        self.map = {}
+        for word in dict:
+            key = self._toKeypad(self._normalize(word))
+            if key in self.map:
+                self.map[key].append(word)
+            else:
+                self.map[key] = [word]
+        
+
+    def getSuggestions(self, context, prefix=None):
+        if prefix == None or prefix not in self.map:
+            return []
+        return self.map[prefix]
 
 class SuggestionSelector:
     def __init__(self, bigramDict=None, dict=None):
