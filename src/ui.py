@@ -4,77 +4,22 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 from origin import Tokenizer
 
-class TextInputTokenizer(Tokenizer):
-
+class StringTokenizer(Tokenizer):
+    """Parse string into list of tokens."""
     def __init__(self):
-        super(TextInputTokenizer, self).__init__()
-        self.lastTokenEnd = 0
-    def setCursor(self, position):
-        self.lastTokenEnd = min(self.lastTokenEnd, position)
+        super(StringTokenizer, self).__init__()
 
-    def getToken(self, text):
+    def tokenize(self, text):
+        position = 0
         tokens = []
-        token = None
-        tokenEnd = self.lastTokenEnd
-        while tokenEnd < len(text):
-            token = self._getToken(text, self.lastTokenEnd)
-            tokenEnd = len(token[1]) + tokenEnd
-            if tokenEnd < len(text):
-                tokens.append(token)
-                self.lastTokenEnd = tokenEnd
-
-        return tokens, token
+        token = self._getToken(text, position)
+        while token != None:
+            tokens.append(token)
+            position += len(token[1])
+            token = self._getToken(text, position)
+        return tokens
     
 
-class DictionaryCompleter(QtGui.QCompleter):
-    _acceptChar = None
-    LABEL_COL = 0
-    TEXT_COL = 1
-    PARTIAL_COL = 2
-    def __init__(self, parent=None, sorter=None, selector=None):
-        QtGui.QCompleter.__init__(self, QtGui.QStandardItemModel(), parent)
-        self.setCompletionColumn(self.TEXT_COL)
-        self.sorter = sorter
-        self.selector = selector
-
-    def eventFilter(self, object, event):
-        if event.type() == QtCore.QEvent.KeyPress and self.popup().isVisible():
-            if event.text() != "" and event.text() in " ,.:;\"'?!":
-                curIndex = self.popup().currentIndex()
-                if curIndex.row() > 0:
-                    self._acceptChar = event.text()
-                    self._q_complete(curIndex)                    
-                    return False
-            else:
-                self._acceptChar = None
-
-        return QtGui.QCompleter.eventFilter(self, object, event)
-    
-    def acceptChar(self):
-        return self._acceptChar
-
-    def update(self, context, prefix, text):
-        print(context); print(prefix)
-        model = QtGui.QStandardItemModel()#self.model()
-        if prefix == "pokor":
-            print("own")
-            item = QtGui.QStandardItem("{}\t{:.2f}".format("pokorword", 80))
-            item2 = QtGui.QStandardItem("pokorpecka")
-            model.setItem(0, self.LABEL_COL, item)
-            model.setItem(0, self.TEXT_COL, item2)
-            row = 1
-        else:
-            row = 0
-            
-        for word, prob in self.sorter.getSortedSuggestions(context, self.selector.getSuggestions(context, prefix)):
-            item = QtGui.QStandardItem("{}\t{:.2f}".format(word, prob))
-            item2 = QtGui.QStandardItem(word)
-            model.setItem(row, self.LABEL_COL, item)
-            model.setItem(row, self.TEXT_COL, item2)
-            row += 1
-        
-        self.setModel(model)
-        self.popup().setModelColumn(self.LABEL_COL)
 
 class CompletionListView(QtGui.QListWidget):
     def keyPressEvent(self, event):
@@ -83,15 +28,12 @@ class CompletionListView(QtGui.QListWidget):
     def selectionMove(self, shift):
         if self.count() == 0:
             return
-        row = self.currentRow()
-        print("Current: ", row)
-        row += shift
+        row = self.currentRow() + shift
         row = (self.count() + row) % self.count()
         self.setCurrentRow(row)
         
 
 class CompletionTextEdit(QtGui.QPlainTextEdit):
-    suggestions = ["mouka", "evoluční", "prokaryotický", "nejstrategičtější", "nejstrašidelnější", "pracný", "prachový", "pomeranč"]
     Popup_Hidden = 0
     Popup_Visible = 1
     Popup_Focused = 2
@@ -99,19 +41,34 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
     UserReason = 0
     InnerReason = 1
 
+    Role_Data = QtCore.Qt.UserRole
+    Role_Probability = Role_Data + 1
+    Role_Partial = Role_Data + 2
+
+    acceptBasicSet = ",.:;\"'?!"
+
+#    TODO data for trigger models
+#    tokenAppended = QtCore.pyqtSignal(tuple) # arg. is appended token
+#    textMassivelyChanged = QtCore.pyqtSignal(int) # arg. is current position of cursor
+
+
     def __init__(self, parent=None):
         super(CompletionTextEdit, self).__init__(parent)
-        self.setMinimumWidth(400)
-#        self.setPlainText("")
-#        self.moveCursor(QtGui.QTextCursor.End)
         self.tokenizer = None
+        self.selector = None
+        self.sorter = None
+        self.contextLength = 3
         self._initPopup()
+        self.lastTokenAppendedPosition = None
         self.cursorPositionChanged.connect(self._cursorPositionChangedHandler)
+        #TODO data for trigger models # self.textChanged.connect(self._textChangedHandler)
         self.cursorMoveReason = self.UserReason
         
     def _initPopup(self):
         self.popup = CompletionListView(self)
+        self.popup.itemClicked.connect(self._popupItemClickedHandler)
         self.setPopupState(self.Popup_Hidden)
+
 
     def popupState(self):
         if self.popup.isVisible():
@@ -137,26 +94,82 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
             raise ValueError()
 
     def _refreshPopup(self):
-        self.popup.move(self.cursorRect().right(), self.cursorRect().bottom())
+        tc = self.textCursor()
+        tc.movePosition(QtGui.QTextCursor.Left, QtGui.QTextCursor.MoveAnchor, len(self._getPrefix()))
+        self.popup.move(self.cursorRect(tc).right(), self.cursorRect(tc).bottom())
+
         self.popup.clear()
-        self.popup.addItems(self.currentSuggestions())
+        for suggestion, probability in self._currentSuggestions():
+            item = QtGui.QListWidgetItem()
+            item.setData(self.Role_Data, suggestion)
+            item.setData(self.Role_Partial, False)
+            item.setData(QtCore.Qt.DisplayRole, "{}\t{:.2f}".format(suggestion, probability))
+            self.popup.addItem(item)
+
 
     def _cursorPositionChangedHandler(self):
         if self.cursorMoveReason == self.UserReason:
             self.setPopupState(self.Popup_Hidden)
         self.cursorMoveReason = self.UserReason
+
+#    TODO data for trigger models
+#    def _textChangedHandler(self):
+#        cursorPosition = self.textCursor().position()
+#        if cursorPosition == len(self.toPlainText()):
+#            if self.lastTokenAppendedPosition == None:
+#                self.lastTokenAppendedPosition = self._lastTokenPosition()
+#                self.tokenAppended.emit(self._getContext()[-1])
+#            elif self.lastTokenAppendedPosition != self._lastTokenPosition():
+#                self.lastTokenAppendedPosition = self._lastTokenPosition()
+#                self.tokenAppended.emit(self._getContext()[-1])
+#        else:
+#            self.textMassivelyChanged.emit(cursorPosition)
+#            self.lastTokenAppendedPosition = None
+
+    def _popupItemClickedHandler(self, item):
+        self._acceptSuggestion(None)
         
-    def setTokenizer(self, tokenizer):
-        self.tokenizer = tokenizer
+    def _currentSuggestions(self):
+        # TODO grouping here
+        context = [""]*(self.contextLength - len(self._getContext())) + [token[1] for token in self._getContext()]
+        prefix = None if self._getPrefix() == "" else self._getPrefix()
+        return self.sorter.getSortedSuggestions(context, self.selector.getSuggestions(context, prefix))
 
-    def currentSuggestions(self):
-        # find prefix
+    def _getPrefix(self):
+        tail = self._getTail()
+        if len(tail) == 0 or tail[-1][0] == Tokenizer.TYPE_WHITESPACE:
+            return ""
+        else:
+            return tail[-1][1] # return string only
+
+    def _getContext(self):
+        tail = self._getTail()
+        if len(tail) == 0:
+            return []
+        
+        if tail[-1][0] == Tokenizer.TYPE_WHITESPACE:
+            return [token for token in tail if token[0] != Tokenizer.TYPE_WHITESPACE][-self.contextLength:]
+        else:
+            return [token for token in tail[:-1] if token[0] != Tokenizer.TYPE_WHITESPACE][-self.contextLength:]
+
+    def _getTail(self):
         tc = self.textCursor()
-        tc.select(QtGui.QTextCursor.WordUnderCursor)
-        prefix = tc.selectedText();
-
-        # fill suggestions
-        return [w for w in self.suggestions if w.startswith(prefix)]
+        # contextLength is in own tokens, therefore we take k-times more words (word + whitespace + reserve)
+        tc.movePosition(QtGui.QTextCursor.WordLeft, QtGui.QTextCursor.KeepAnchor, self.contextLength * 3)
+        return self.tokenizer.tokenize(tc.selectedText())
+        
+#    TODO trigger base model data push
+#    def _lastTokenPosition(self):
+#        """Return position behind last character of last token before cursor."""
+#        tail = self._getTail()
+#        if len(tail) == 0:
+#            return 0
+#        else:
+#            cursorPosition = self.textCursor().position()
+#            if tail[-1][0] == Tokenizer.TYPE_WHITESPACE:
+#                return cursorPosition - len(tail[-1][1])
+#            else:
+#                return cursorPosition
 
     def keyPressEvent(self, event):
         handled = False
@@ -169,7 +182,7 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
                 self.cursorMoveReason = self.InnerReason
                 QtGui.QPlainTextEdit.keyPressEvent(self, event)
                 handled = True
-                if len(self.currentSuggestions()) > 0:
+                if len(self._currentSuggestions()) > 0:
                     self.setPopupState(self.Popup_Visible)
 
         elif self.popupState() == self.Popup_Visible:
@@ -178,7 +191,7 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
                 self.setPopupState(self.Popup_Hidden)
                 handled = True
             # selection change
-            elif event.key() == QtCore.Qt.Key_Up or event.key() == QtCore.Qt.Key_Down:
+            elif event.key() == QtCore.Qt.Key_Up or event.key() == QtCore.Qt.Key_Down: #TODO pgup/down
                 if event.key() == QtCore.Qt.Key_Up:
                     self.popup.selectionMove(-1)
                 else:
@@ -189,7 +202,7 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
                 self.cursorMoveReason = self.InnerReason
                 QtGui.QPlainTextEdit.keyPressEvent(self, event)
                 handled = True
-                if len(self.currentSuggestions()) > 0:
+                if len(self._currentSuggestions()) > 0:
                     self._refreshPopup()
                 else:
                     self.setPopupState(self.Popup_Hidden)
@@ -200,17 +213,16 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
                 self.setPopupState(self.Popup_Hidden)
                 handled = True
             # selection change
-            elif event.key() == QtCore.Qt.Key_Up or event.key() == QtCore.Qt.Key_Down:
+            elif event.key() == QtCore.Qt.Key_Up or event.key() == QtCore.Qt.Key_Down: #TODO pgup/down
                 if event.key() == QtCore.Qt.Key_Up:
                     self.popup.selectionMove(-1)
                 else:
                     self.popup.selectionMove(1)
                 handled = True
             elif self._isAcceptKey(event):
-                self.cursorMoveReason = self.InnerReason
-                self._acceptSuggestion()
+                self._acceptSuggestion(event)
                 handled = True
-                if len(self.currentSuggestions()) > 0:
+                if len(self._currentSuggestions()) > 0:
                     self.setPopupState(self.Popup_Visible)
                 else:
                     self.setPopupState(self.Popup_Hidden)
@@ -218,19 +230,37 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
                 self.cursorMoveReason = self.InnerReason
                 QtGui.QPlainTextEdit.keyPressEvent(self, event)
                 handled = True
-                if len(self.currentSuggestions()) > 0:
+                if len(self._currentSuggestions()) > 0:
                     self._refreshPopup()
                 else:
                     self.setPopupState(self.Popup_Hidden)
 
         if not handled:
             QtGui.QPlainTextEdit.keyPressEvent(self, event)
+        print(self._getContext(), ": ", self._getPrefix())
 
-    def _isAcceptKey(self, event):
-        return event.key() in [QtCore.Qt.Key_Tab, QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]
 
-    def _acceptSuggestion(self):
+    def _isAcceptKey(self, keyEvent):
+        return keyEvent.key() in [QtCore.Qt.Key_Tab, QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return, QtCore.Qt.Key_Space] \
+            or keyEvent.text() in self.acceptBasicSet
+
+    def _acceptSuggestion(self, keyEvent):
+        """keyEvent can be none in case of invoking accept by mouse"""
+        chosenItem = self.popup.currentItem()
+        prefix = self._getPrefix()
+        
+        if chosenItem.data(self.Role_Partial):
+            appendix = ""
+        elif keyEvent == None or keyEvent.text() == " ": # mouse or space
+            appendix = " "
+        elif keyEvent.text() in self.acceptBasicSet:
+            appendix = keyEvent.text() + " "
+        else:
+            appendix = " "
+        
         tc = self.textCursor()
-        tc.insertText(self.popup.currentItem().text())
+        tc.movePosition(QtGui.QTextCursor.Left, QtGui.QTextCursor.KeepAnchor, len(prefix))
+        tc.insertText(chosenItem.data(self.Role_Data) + appendix)
+        self.cursorMoveReason = self.InnerReason
         self.setTextCursor(tc)
 
