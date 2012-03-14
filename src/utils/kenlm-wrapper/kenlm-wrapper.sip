@@ -113,7 +113,7 @@ public:
 %Docstring
 Convert string into vocabulary entry index.
 %End
-    PyObject* GetTokens() const; //
+    PyObject* GetTokens(); //
 %Docstring
 Return whole vocabulary of associated model as a tuple (immutable list).
 %End

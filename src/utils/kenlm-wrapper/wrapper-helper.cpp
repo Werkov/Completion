@@ -5,7 +5,6 @@ PyObject* MyPyList_FromState(lm::ngram::State* state) {
      PyList_SetItem(result, 0, arrayToPyList(state->words, sizeof(state->words)/sizeof(*state->words)));
      PyList_SetItem(result, 1, arrayToPyList(state->backoff, sizeof(state->backoff)/sizeof(*state->backoff)));
      PyList_SetItem(result, 2, PyLong_FromUnsignedLong(state->length));
-    std::cerr << "lm::ngram::result->list: " << (int)state->length << std::endl;
      return result;
 }
 

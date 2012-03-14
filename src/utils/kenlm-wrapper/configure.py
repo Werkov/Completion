@@ -26,7 +26,7 @@ extra_bin_dirs = [os.path.abspath("../../../libs/kenlm/bin/lm"), os.path.abspath
 # makefile.extra_lflags = [" ".join([os.path.join(bin, "*.o") for bin in extra_bin_dirs])] # unnecessary, included in kenlm-wrapper.o
 makefile.extra_include_dirs = [os.path.abspath("../../../libs/kenlm")]
 makefile.extra_lflags = ["kenlm-wrapper.o"]
-# Uncomment to cimple with ICU implementatio of stringpiece: makefile.extra_defines = ["HAVE_ICU"]
+# Uncomment to compile with ICU implementation of stringpiece: makefile.extra_defines = ["HAVE_ICU"]
 
 
 # Generate the Makefile itself.
