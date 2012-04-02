@@ -198,6 +198,13 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
                     self.popup.selectionMove(1)
                 self.setPopupState(self.Popup_Focused)
                 handled = True
+            elif self._isFastAcceptKey(event):
+                self._acceptSuggestion(event)
+                handled = True
+                if len(self._currentSuggestions()) > 0:
+                    self.setPopupState(self.Popup_Visible)
+                else:
+                    self.setPopupState(self.Popup_Hidden)
             elif event.text().isprintable() and event.text() != "":
                 self.cursorMoveReason = self.InnerReason
                 QtGui.QPlainTextEdit.keyPressEvent(self, event)
@@ -244,9 +251,12 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
         return keyEvent.key() in [QtCore.Qt.Key_Tab, QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return, QtCore.Qt.Key_Space] \
             or keyEvent.text() in self.acceptBasicSet
 
+    def _isFastAcceptKey(self, keyEvent):
+        return keyEvent.key() in [QtCore.Qt.Key_Tab]
+
     def _acceptSuggestion(self, keyEvent):
         """keyEvent can be none in case of invoking accept by mouse"""
-        chosenItem = self.popup.currentItem()
+        chosenItem = self.popup.currentItem() if self.popup.currentItem() else self.popup.item(0)
         prefix = self._getPrefix()
         
         if chosenItem.data(self.Role_Partial):
