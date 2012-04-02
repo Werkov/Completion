@@ -95,7 +95,7 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
 
     def _refreshPopup(self):
         tc = self.textCursor()
-        tc.movePosition(QtGui.QTextCursor.Left, QtGui.QTextCursor.MoveAnchor, len(self._getPrefix()))
+        tc.movePosition(QtGui.QTextCursor.Left, QtGui.QTextCursor.MoveAnchor, len(self._prefix()))
         self.popup.move(self.cursorRect(tc).right(), self.cursorRect(tc).bottom())
 
         self.popup.clear()
@@ -131,19 +131,19 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
         
     def _currentSuggestions(self):
         # TODO grouping here
-        context = [""]*(self.contextLength - len(self._getContext())) + [token[1] for token in self._getContext()]
-        prefix = None if self._getPrefix() == "" else self._getPrefix()
+        context = [""]*(self.contextLength - len(self._context())) + [token[1] for token in self._context()]
+        prefix = None if self._prefix() == "" else self._prefix()
         return self.sorter.getSortedSuggestions(context, self.selector.getSuggestions(context, prefix))
 
-    def _getPrefix(self):
-        tail = self._getTail()
+    def _prefix(self):
+        tail = self._tail()
         if len(tail) == 0 or tail[-1][0] == Tokenizer.TYPE_WHITESPACE:
             return ""
         else:
             return tail[-1][1] # return string only
 
-    def _getContext(self):
-        tail = self._getTail()
+    def _context(self):
+        tail = self._tail()
         if len(tail) == 0:
             return []
         
@@ -152,7 +152,7 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
         else:
             return [token for token in tail[:-1] if token[0] != Tokenizer.TYPE_WHITESPACE][-self.contextLength:]
 
-    def _getTail(self):
+    def _tail(self):
         tc = self.textCursor()
         # contextLength is in own tokens, therefore we take k-times more words (word + whitespace + reserve)
         tc.movePosition(QtGui.QTextCursor.WordLeft, QtGui.QTextCursor.KeepAnchor, self.contextLength * 3)
@@ -244,12 +244,12 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
 
         if not handled:
             QtGui.QPlainTextEdit.keyPressEvent(self, event)
-        print(self._getContext(), ": ", self._getPrefix())
+        print(self._context(), ": ", self._prefix())
 
 
     def _isAcceptKey(self, keyEvent):
         return keyEvent.key() in [QtCore.Qt.Key_Tab, QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return, QtCore.Qt.Key_Space] \
-            or keyEvent.text() in self.acceptBasicSet
+            or (keyEvent.text() != "" and keyEvent.text() in self.acceptBasicSet)
 
     def _isFastAcceptKey(self, keyEvent):
         return keyEvent.key() in [QtCore.Qt.Key_Tab]
@@ -257,7 +257,7 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
     def _acceptSuggestion(self, keyEvent):
         """keyEvent can be none in case of invoking accept by mouse"""
         chosenItem = self.popup.currentItem() if self.popup.currentItem() else self.popup.item(0)
-        prefix = self._getPrefix()
+        prefix = self._prefix()
         
         if chosenItem.data(self.Role_Partial):
             appendix = ""
