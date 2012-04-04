@@ -2,7 +2,8 @@ import sys
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
-from origin import Tokenizer
+from origin import Tokenizer, Trie
+import math
 
 class StringTokenizer(Tokenizer):
     """Parse string into list of tokens."""
@@ -97,11 +98,11 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
         self.popup.move(self.cursorRect(tc).right(), self.cursorRect(tc).bottom())
 
         self.popup.clear()
-        for suggestion, probability in self._currentSuggestions():
+        for suggestion, probability, partial in self._groupedCurrentSuggestions():
             item = QtGui.QListWidgetItem()
             item.setData(self.Role_Data, suggestion)
-            item.setData(self.Role_Partial, False)
-            item.setData(QtCore.Qt.DisplayRole, "{}\t{:.2f}".format(suggestion, probability))
+            item.setData(self.Role_Partial, partial)
+            item.setData(QtCore.Qt.DisplayRole, "{}\t{:.2f}".format(suggestion + (":" if partial else ""), probability))
             self.popup.addItem(item)
 
 
@@ -123,11 +124,55 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
         self._acceptSuggestion(None)
         
     def _currentSuggestions(self):
-        # TODO grouping here
         context = [""]*(self.contextLength - len(self._context())) + [token[1] for token in self._context()]
         prefix = None if self._prefix() == "" else self._prefix()
         return self.sorter.getSortedSuggestions(context, self.selector.getSuggestions(context, prefix))
 
+    def _groupedCurrentSuggestions(self):
+        class Node:
+            def __init__(self, partial, suggestion, probability = 0):
+                self.partial = partial
+                self.suggestion = suggestion
+                self.probability = probability
+
+        limit = 3
+        threshold = -5
+
+        t = Trie()
+        sugg = 0
+        for suggestion, probability in self._currentSuggestions():
+            t[suggestion] = Node(False, True, probability)
+            sugg += 1
+
+        while sugg > limit:
+            lower = [prefix for prefix in t if t[prefix].probability < threshold]
+            if len(lower) > 0:
+                lower.sort(key=lambda prefix: (t[prefix].probability, len(prefix)))
+                least = lower[0]
+                parent = least[-1]
+                childProbs = [10**t[prefix].probability for prefix in t.children(parent)]
+                
+                if parent in t:
+                    t[parent].partial = True
+                    t[parent].probability = math.log10(sum(childProbs) + 10**t[parent].probability)
+                else:
+                    t[parent] = Node(True, True, math.log10(sum(childProbs)))
+                    sugg += 1
+
+                for prefix in t.children(parent):
+                    sugg -= 1
+                    del t[prefix]
+            else: # all suggestions are above threshold
+                suggestions = [prefix for prefix in t]
+                suggestions.sort(key=lambda prefix: (t[prefix].probability, len(prefix)))
+                worst = suggestions[0]
+                del t[worst]
+                sugg -= 1
+            
+        result = [(prefix, t[prefix].probability, t[prefix].partial) for prefix in t]
+        result.sort(key=lambda item: -item[1]) # sorted by probability
+        return result
+    
     def _prefix(self):
         tail = self._tail()
         if len(tail) == 0 or tail[-1][0] == Tokenizer.TYPE_WHITESPACE:
