@@ -5,25 +5,29 @@ be detached to specific modules when they become more complex.
 """
 from math import log
 from math import sqrt
-import string, unicodedata
 import sys
 
 import re
+import string
+import unicodedata
 from utils import kenlm
 
 N = 3 # must be >= 2
 
 class MockLangModel:
     """Just specification of an interface"""
-    def getProbability(self, ngram):
-        """Return tuple – no. of occurencies and probability of ngram"""
+    def probability(self, ngram):
+        """Return tuple – no. of occurencies and probability of ngram."""
         return 0.0, 0.0
-    def getAllCount(self, length):
-        """Return total count of observed ngrams of given length"""
+    def allCount(self, length):
+        """Return total count of observed ngrams of given length."""
         return 0
+    def updateUserInput(self, text):
+        """Used to refresh text inserted by user. Parameter is whole text from begining to the cursor."""
+        pass
 
 class MockLangModelB:
-    def getProbability(self, context, token):
+    def probability(self, context, token):
         return 0
 
 class Tokenizer:
@@ -99,22 +103,30 @@ class TextFileTokenizer (Tokenizer):
         return token
 
 class SimpleTriggerModel:
-    def __init__(self):
+    def __init__(self, tokenizer):
         self.reset()
+        self.tokenizer = tokenizer
 
     def reset(self):
-        self.dictionary = set()
-        self._lastPosition = {}
-        self.currentPosition = 0
+        self.dictionary = {}
+        self.sum = 0
 
-    def add(self, token):
-        self.dictionary.add(token)
-        self._lastPosition[token] = self.currentPosition
-        self.currentPosition += 1
+    def updateUserInput(self, text):
+        self.reset()
+        for token in self.tokenizer.tokenize(text):
+            self._add(token)
 
-    def getProbability(self, context, token):
+    def _add(self, token):
+        if token[0] == Tokenizer.TYPE_WORD:
+            if token[1] not in self.dictionary:
+                self.dictionary[token[1]] = 0
+            self.dictionary[token[1]] += 1
+            self.sum += 1
+        
+
+    def probability(self, context, token):
         if token in self.dictionary:
-            return 1 / len(self.dictionary)
+            return self.dictionary[token] / self.sum
         else:
             return 0
 
@@ -123,7 +135,7 @@ class KenLMModel:
         self._model = kenlm.Model(filename)
         self.dictionary = self._model.GetVocabulary().GetTokens()
 
-    def getProbability(self, context, token):
+    def probability(self, context, token):
         state = self._model.NullContextState()
         v = self._model.GetVocabulary()
         # shift model to correct state
@@ -166,10 +178,10 @@ class SimpleLangModel:
     def _ngramToKey(self, ngram):
         return SimpleLangModel.delimiter.join(ngram)
 
-    def getAllCount(self, length):
+    def allCount(self, length):
         return self.ngramCounts[length - 1]
 
-    def getProbability(self, ngram):
+    def probability(self, ngram):
         order = len(ngram) - 1
         key = self._ngramToKey(ngram)
         if key not in self.ngrams:
@@ -184,16 +196,16 @@ class LaplaceSmoothLM:
     def __init__(self, baseLM, vocabularySize=None, parameter=1):
         """If vocabulary size not set, it's taken as unigram count from the model"""
         self.baseLM = baseLM
-        self.vocabularySize = vocabularySize if vocabularySize != None else self.baseLM.getAllCount(1) + 1 # one uknown word
+        self.vocabularySize = vocabularySize if vocabularySize != None else self.baseLM.allCount(1) + 1 # one uknown word
         self.parameter = parameter
 
-    def getProbability(self, ngram):
-        count, prob = self.baseLM.getProbability(ngram) # don't use prob
+    def probability(self, ngram):
+        count, prob = self.baseLM.probability(ngram) # don't use prob
         count += self.parameter
-        return count, float(count) / self.getAllCount(len(ngram))
+        return count, float(count) / self.allCount(len(ngram))
 
-    def getAllCount(self, length):
-        return self.baseLM.getAllCount(length) + self.parameter * (self.vocabularySize ** length)
+    def allCount(self, length):
+        return self.baseLM.allCount(length) + self.parameter * (self.vocabularySize ** length)
 
 class NgramLM:
     """
@@ -203,7 +215,7 @@ class NgramLM:
         self.baseLM = baseLM
         self.M = M
 
-    def getProbability(self, ngram):
+    def probability(self, ngram):
         if len(ngram) == N:
             ngram = ngram[-self.M:]
         else:
@@ -211,29 +223,29 @@ class NgramLM:
         if len(ngram) == 0:
             return 0, 1
         else:
-            return self.baseLM.getProbability(ngram)
+            return self.baseLM.probability(ngram)
 
-    def getAllCount(self, length):
-        return self.baseLM.getAllCount(length)
+    def allCount(self, length):
+        return self.baseLM.allCount(length)
     
 class LinearInterLM:
     def __init__(self, LMs, coeffs):
         self.baseLMs = LMs
         self.coeffs = coeffs
-    def getProbability(self, ngram):
+    def probability(self, ngram):
         prob = 0
         cnt = 0
         for i in range(len(self.baseLMs)):
-            c, p = self.baseLMs[i].getProbability(ngram)
+            c, p = self.baseLMs[i].probability(ngram)
             prob += p * self.coeffs[i]
             cnt += c * self.coeffs[i]
         return cnt, prob
         
 
-    def getAllCount(self, length):
+    def allCount(self, length):
         cnt = 0
         for i in range(len(self.baseLMs)):
-            c = self.baseLMs[i].getAllCount(length)
+            c = self.baseLMs[i].allCount(length)
             cnt += c * self.coeffs[i]
         return cnt
 
@@ -246,7 +258,7 @@ class T9SuggestionSelector:
     "m": 6, "n": 6, "o": 6,
     "p": 7, "q": 7, "r": 7, "s": 7,
     "t": 8, "u": 8, "v": 8,
-    "w": 9, "x": 9, "y": 9,"z": 9}
+    "w": 9, "x": 9, "y": 9, "z": 9}
 
     def _normalize(self, text):
         return ''.join(x for x in unicodedata.normalize('NFKD', text) if x in string.ascii_letters).lower()
@@ -301,7 +313,7 @@ class SuggestionSorter:
     def getSortedSuggestions(self, context, suggestions):
         tips = []
         for token in suggestions:
-            prob = self.languageModel.getProbability(context, token)
+            prob = self.languageModel.probability(context, token)
             tips.append((token, prob))
 
         tips.sort(key=lambda pair: -pair[1])
@@ -331,11 +343,11 @@ class EntropyMetric:
 
     def measure(self, history, token):
         context = history[-(N-1):]
-        cnt, probContext = self.languageModel.getProbability(context)
+        cnt, probContext = self.languageModel.probability(context)
         if probContext == 0:
             self.entropy += float("inf")
         else:
-            cnt, probNgram = self.languageModel.getProbability(context + [token])
+            cnt, probNgram = self.languageModel.probability(context + [token])
             self.entropy += -log(probNgram / probContext, 2)
             # print("{} | {}\t\t\t\t\t\t\t{:f}\t".format(token, context, log(probNgram/probContext)))
         self.tokenCnt += 1

@@ -47,21 +47,19 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
 
     acceptBasicSet = ",.:;\"'?!"
 
-#    TODO data for trigger models
-#    tokenAppended = QtCore.pyqtSignal(tuple) # arg. is appended token
-#    textMassivelyChanged = QtCore.pyqtSignal(int) # arg. is current position of cursor
-
 
     def __init__(self, parent=None):
         super(CompletionTextEdit, self).__init__(parent)
         self.tokenizer = None
         self.selector = None
         self.sorter = None
+        self.langModel = None
         self.contextLength = 3
         self._initPopup()
         self.lastTokenAppendedPosition = None
+        
         self.cursorPositionChanged.connect(self._cursorPositionChangedHandler)
-        #TODO data for trigger models # self.textChanged.connect(self._textChangedHandler)
+        self.textChanged.connect(self._textChangedHandler)
         self.cursorMoveReason = self.UserReason
         
     def _initPopup(self):
@@ -112,19 +110,14 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
             self.setPopupState(self.Popup_Hidden)
         self.cursorMoveReason = self.UserReason
 
-#    TODO data for trigger models
-#    def _textChangedHandler(self):
-#        cursorPosition = self.textCursor().position()
-#        if cursorPosition == len(self.toPlainText()):
-#            if self.lastTokenAppendedPosition == None:
-#                self.lastTokenAppendedPosition = self._lastTokenPosition()
-#                self.tokenAppended.emit(self._getContext()[-1])
-#            elif self.lastTokenAppendedPosition != self._lastTokenPosition():
-#                self.lastTokenAppendedPosition = self._lastTokenPosition()
-#                self.tokenAppended.emit(self._getContext()[-1])
-#        else:
-#            self.textMassivelyChanged.emit(cursorPosition)
-#            self.lastTokenAppendedPosition = None
+    def _textChangedHandler(self):
+        if self.langModel:
+            # provide only text before cursor (without the last token)
+            tc = self.textCursor()
+            tc.movePosition(QtGui.QTextCursor.WordLeft, QtGui.QTextCursor.MoveAnchor, 1)
+            tc.movePosition(QtGui.QTextCursor.Start, QtGui.QTextCursor.KeepAnchor)
+            self.langModel.updateUserInput(tc.selectedText())
+
 
     def _popupItemClickedHandler(self, item):
         self._acceptSuggestion(None)
@@ -246,7 +239,6 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
             QtGui.QPlainTextEdit.keyPressEvent(self, event)
         print(self._context(), ": ", self._prefix())
 
-
     def _isAcceptKey(self, keyEvent):
         return keyEvent.key() in [QtCore.Qt.Key_Tab, QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return, QtCore.Qt.Key_Space] \
             or (keyEvent.text() != "" and keyEvent.text() in self.acceptBasicSet)
@@ -257,6 +249,8 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
     def _acceptSuggestion(self, keyEvent):
         """keyEvent can be none in case of invoking accept by mouse"""
         chosenItem = self.popup.currentItem() if self.popup.currentItem() else self.popup.item(0)
+        if not chosenItem:
+            return None
         prefix = self._prefix()
         
         if chosenItem.data(self.Role_Partial):

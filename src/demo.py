@@ -17,6 +17,7 @@ class Window(QtGui.QWidget):
         self.setWindowTitle('Completion test')
 
         klm = KenLMModel("../sample-data/povidky.arpa")
+        tlm = SimpleTriggerModel(StringTokenizer())
         #slm = SimpleLangModel(open("../sample-data/povidky.arpa"))
         #klm = KenLMModel("../large-data/big.arpa")
 
@@ -24,7 +25,7 @@ class Window(QtGui.QWidget):
         #selector = T9SuggestionSelector(dict=klm.dictionary)
         #selector = SuggestionSelector(bigramDict=slm.search)
         #selector = SuggestionSelector(dict=slm.search)
-        sorter = SuggestionSorter(klm)
+        sorter = SuggestionSorter(tlm)
 
         self.txtMain = CompletionTextEdit(self)
 
@@ -32,6 +33,7 @@ class Window(QtGui.QWidget):
         self.txtMain.sorter = sorter
         self.txtMain.contextLength = 2
         self.txtMain.tokenizer = StringTokenizer()
+        self.txtMain.langModel = tlm
         layout = QtGui.QVBoxLayout(self)
         layout.addWidget(self.txtMain)
 
