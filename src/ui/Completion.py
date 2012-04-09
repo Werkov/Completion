@@ -1,28 +1,13 @@
-import sys
-
 from PyQt4 import QtCore
 from PyQt4 import QtGui
-from origin import Tokenizer, Trie
+from common import Trie
+from common.Tokenize import Tokenizer
 import math
 
-class StringTokenizer(Tokenizer):
-    """Parse string into list of tokens."""
-    def __init__(self):
-        super(StringTokenizer, self).__init__()
-
-    def tokenize(self, text):
-        position = 0
-        tokens = []
-        token = self._getToken(text, position)
-        while token != None:
-            tokens.append(token)
-            position += len(token[1])
-            token = self._getToken(text, position)
-        return tokens
     
 
 
-class CompletionListView(QtGui.QListWidget):
+class ListView(QtGui.QListWidget):
     def keyPressEvent(self, event):
         event.ignore()
 
@@ -34,7 +19,7 @@ class CompletionListView(QtGui.QListWidget):
         self.setCurrentRow(row)
         
 
-class CompletionTextEdit(QtGui.QPlainTextEdit):
+class TextEdit(QtGui.QPlainTextEdit):
     Popup_Hidden = 0
     Popup_Visible = 1
     Popup_Focused = 2
@@ -50,7 +35,7 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
 
 
     def __init__(self, parent=None):
-        super(CompletionTextEdit, self).__init__(parent)
+        super(TextEdit, self).__init__(parent)
         self.tokenizer = None
         self.selector = None
         self.sorter = None
@@ -64,7 +49,7 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
         self.cursorMoveReason = self.UserReason
         
     def _initPopup(self):
-        self.popup = CompletionListView(self)
+        self.popup = ListView(self)
         self.popup.itemClicked.connect(self._popupItemClickedHandler)
         self.setPopupState(self.Popup_Hidden)
 
@@ -135,21 +120,22 @@ class CompletionTextEdit(QtGui.QPlainTextEdit):
                 self.suggestion = suggestion
                 self.probability = probability
 
-        limit = 3
-        threshold = -5
+        limit = 20
+        threshold = -4
 
         t = Trie()
         sugg = 0
         for suggestion, probability in self._currentSuggestions():
             t[suggestion] = Node(False, True, probability)
             sugg += 1
-
+            
         while sugg > limit:
             lower = [prefix for prefix in t if t[prefix].probability < threshold]
             if len(lower) > 0:
                 lower.sort(key=lambda prefix: (t[prefix].probability, len(prefix)))
                 least = lower[0]
-                parent = least[-1]
+                parent = least[:-1]
+                print(least, parent)
                 childProbs = [10**t[prefix].probability for prefix in t.children(parent)]
                 
                 if parent in t:

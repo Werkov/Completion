@@ -1,9 +1,9 @@
 import sys
 
-from PyQt4 import QtCore
 from PyQt4 import QtGui
-from ui import *
-from origin import *
+import ui.Completion
+from lm.origin import *
+from common.Tokenize import StringTokenizer
 
 class Window(QtGui.QWidget):
     def __init__(self):
@@ -27,7 +27,7 @@ class Window(QtGui.QWidget):
         #selector = SuggestionSelector(dict=slm.search)
         sorter = SuggestionSorter(klm)
 
-        self.txtMain = CompletionTextEdit(self)
+        self.txtMain = ui.Completion.TextEdit(self)
 
         self.txtMain.selector = selector
         self.txtMain.sorter = sorter
