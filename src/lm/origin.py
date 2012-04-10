@@ -3,7 +3,6 @@ Basic implementations of essential classes.
 Module is temporarily named 'origin' as the classes will
 be detached to specific modules when they become more complex.
 """
-from math import log
 
 import string
 import unicodedata
@@ -246,50 +245,4 @@ class SuggestionSorter:
 
         tips.sort(key=lambda pair: -pair[1])
         return tips
-
-class AutomatedTest:
-    def __init__(self, file):
-        self.file = file
-        self.metrics = []
-
-    def addMetric(self, metric):
-        self.metrics.append(metric)
-
-    def runTest(self):
-        tokenizer = TextFileTokenizer(self.file)
-        history = ["beg", "beg"] # TODO
-        for (type, token) in tokenizer:
-            for metric in self.metrics:
-                metric.measure(history, token)
-            history.append(token)
-
-class EntropyMetric:
-    def __init__(self, languageModel):
-        self.languageModel = languageModel
-        self.entropy = 0
-        self.tokenCnt = 0
-
-    def measure(self, history, token):
-        context = history[-(N-1):]
-        cnt, probContext = self.languageModel.probability(context)
-        if probContext == 0:
-            self.entropy += float("inf")
-        else:
-            cnt, probNgram = self.languageModel.probability(context + [token])
-            self.entropy += -log(probNgram / probContext, 2)
-            # print("{} | {}\t\t\t\t\t\t\t{:f}\t".format(token, context, log(probNgram/probContext)))
-        self.tokenCnt += 1
-
-
-    def getResult(self):
-        entropyPerToken = self.entropy / self.tokenCnt
-        return 2 ** entropyPerToken
-
-class QwertyMetric:
-    pass
-class BikeyboardMetric:
-    pass
-class SuggesitionsMetric:
-    pass
-
 
