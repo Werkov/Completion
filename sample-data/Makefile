@@ -5,4 +5,4 @@ all: povidky.arpa
 	ngram-count -lm $@ -text $<
 
 %.txt.sentences: %.txt
-	../src/utils/formatText.py $<
+	../src/learning/formatText.py $<

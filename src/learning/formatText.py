@@ -2,12 +2,11 @@
 #coding=utf-8
 
 import sys
-import string
-from collections import deque
 import os
+if __name__ == "__main__":
+    sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
-from origin import TextFileTokenizer, Tokenizer
+from common.Tokenize import TextFileTokenizer, Tokenizer
 
 # collapse whitespace to single space
 # and split text into sentences (as delimiter is used '.')
@@ -33,12 +32,7 @@ if len(sys.argv) < 2:
    print( "Usage: format.py file(s) ...")
    sys.exit(1)
 
-args = deque(sys.argv[1:])
-files = []
-
-while len(args) > 0:
-   arg = args.popleft()
-   files.append(arg)
+files = sys.argv[1:]
 
 if len(files) == 0:
    print("No input files given.")

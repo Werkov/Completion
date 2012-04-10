@@ -1,4 +1,6 @@
 from lm.origin import *
+from lm.Selection import *
+from lm.Sorting import *
 
 
 class Configuration:
@@ -20,5 +22,15 @@ class ConfigurationBuilder:
         result.selector = SuggestionSelector(dict=klm.dictionary)
         result.sorter = SuggestionSorter(klm)
         
+        return result
+
+    def _createBidebug():
+        result = Configuration()
+
+        klm = KenLMModel("../sample-data/povidky.arpa")
+        slm = SimpleLangModel(open("../sample-data/povidky.txt"))
+        result.selector = SuggestionSelector(bigramDict=slm.search)
+        result.sorter = SuggestionSorter(klm)
+
         return result
     
