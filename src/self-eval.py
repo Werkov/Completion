@@ -1,9 +1,10 @@
 #!/usr/bin/python3
+from evaluation.Metrics import QwertyMetric
 import sys
 
 from common.Configuration import ConfigurationBuilder
 from evaluation.Testing import AutomatedTest
-from evaluation.Metrics import EntropyMetric, SuggesitionsMetric
+from evaluation.Metrics import *
 
 configBuilder = ConfigurationBuilder()
 
@@ -17,5 +18,6 @@ for filename in sys.argv[2:]:
 
     test.metrics.append(EntropyMetric(config.sorter.languageModel, config.contextLength))
     test.metrics.append(SuggesitionsMetric(config.selector, config.sorter, config.contextLength))
+    test.metrics.append(QwertyMetric(config.selector, config.sorter, config.filter, config.contextLength))
     test.runTest()
     test.result()

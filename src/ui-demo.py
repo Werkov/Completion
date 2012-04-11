@@ -27,6 +27,7 @@ class Window(QtGui.QWidget):
         self.txtMain.sorter         = config.sorter
         self.txtMain.langModel      = config.userInputModel
         self.txtMain.contextLength  = config.contextLength
+        self.txtMain.filter         = config.filter
         self.txtMain.tokenizer      = StringTokenizer()
 
         layout = QtGui.QVBoxLayout(self)

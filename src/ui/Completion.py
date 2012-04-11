@@ -1,8 +1,8 @@
 from PyQt4 import QtCore
 from PyQt4 import QtGui
-from common import Trie
+
 from common.Tokenize import Tokenizer
-import math
+
 
     
 
@@ -36,14 +36,14 @@ class TextEdit(QtGui.QPlainTextEdit):
 
     def __init__(self, parent=None):
         super(TextEdit, self).__init__(parent)
-        self.tokenizer = None
-        self.selector = None
-        self.sorter = None
-        self.langModel = None
-        self.contextLength = 3
+        self.tokenizer      = None
+        self.selector       = None
+        self.sorter         = None
+        self.filter         = None
+        self.langModel      = None
+        self.contextLength  = 3
         self._initPopup()
-        self.lastTokenAppendedPosition = None
-        
+               
         self.cursorPositionChanged.connect(self._cursorPositionChangedHandler)
         self.textChanged.connect(self._textChangedHandler)
         self.cursorMoveReason = self.UserReason
@@ -83,7 +83,7 @@ class TextEdit(QtGui.QPlainTextEdit):
         self.popup.move(self.cursorRect(tc).right(), self.cursorRect(tc).bottom())
 
         self.popup.clear()
-        for suggestion, probability, partial in self._groupedCurrentSuggestions():
+        for suggestion, probability, partial in self._currentSuggestions():
             item = QtGui.QListWidgetItem()
             item.setData(self.Role_Data, suggestion)
             item.setData(self.Role_Partial, partial)
@@ -110,54 +110,13 @@ class TextEdit(QtGui.QPlainTextEdit):
         
     def _currentSuggestions(self):
         context = [""]*(self.contextLength - len(self._context())) + [token[1] for token in self._context()]
-        prefix = None if self._prefix() == "" else self._prefix()
-        return self.sorter.getSortedSuggestions(context, self.selector.getSuggestions(context, prefix))
-
-    def _groupedCurrentSuggestions(self):
-        class Node:
-            def __init__(self, partial, suggestion, probability = 0):
-                self.partial = partial
-                self.suggestion = suggestion
-                self.probability = probability
-
-        limit = 20
-        threshold = -4
-
-        t = Trie()
-        sugg = 0
-        for suggestion, probability in self._currentSuggestions():
-            t[suggestion] = Node(False, True, probability)
-            sugg += 1
-            
-        while sugg > limit:
-            lower = [prefix for prefix in t if t[prefix].probability < threshold]
-            if len(lower) > 0:
-                lower.sort(key=lambda prefix: (t[prefix].probability, len(prefix)))
-                least = lower[0]
-                parent = least[:-1]
-                print(least, parent)
-                childProbs = [10**t[prefix].probability for prefix in t.children(parent)]
-                
-                if parent in t:
-                    t[parent].partial = True
-                    t[parent].probability = math.log10(sum(childProbs) + 10**t[parent].probability)
-                else:
-                    t[parent] = Node(True, True, math.log10(sum(childProbs)))
-                    sugg += 1
-
-                for prefix in t.children(parent):
-                    sugg -= 1
-                    del t[prefix]
-            else: # all suggestions are above threshold
-                suggestions = [prefix for prefix in t]
-                suggestions.sort(key=lambda prefix: (t[prefix].probability, len(prefix)))
-                worst = suggestions[0]
-                del t[worst]
-                sugg -= 1
-            
-        result = [(prefix, t[prefix].probability, t[prefix].partial) for prefix in t]
-        result.sort(key=lambda item: -item[1]) # sorted by probability
-        return result
+        prefix = self._prefix()
+        rawSuggestions = self.sorter.getSortedSuggestions(context, self.selector.getSuggestions(context, prefix))
+        suggestions = [(suggestion, probability, False) for suggestion, probability in rawSuggestions]
+        if self.filter != None:
+            return self.filter.filter(suggestions, prefix)
+        else:
+            return suggestions    
     
     def _prefix(self):
         tail = self._tail()

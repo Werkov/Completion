@@ -1,6 +1,14 @@
 import sys
 sys.path.append("../")
 
+class TrieNode:
+    """Unused"""    
+    def __init__(self, data=None, parent=None):
+        self.data = data
+        self.parent = parent
+        self._children = {}
+        
+
 class Trie:
     def __init__(self):
         self.root = self._newNode()
@@ -14,6 +22,7 @@ class Trie:
             current = current[1][c]
         return current
 
+    #TODO outer use, consider renaming to "public"
     def _findNode(self, key):
         current = self.root
         for c in key:
@@ -45,6 +54,7 @@ class Trie:
             raise KeyError
         return node[0]
 
+
     def __contains__(self, key):
         node = self._findNode(key)
         return node != None and node[0] != None
@@ -55,7 +65,7 @@ class Trie:
     def children(self, key):
         node = self._findNode(key)
         if not node:
-            raise KeyError
+            raise KeyError(key)
         result=[]
         for n in node[1]:
             if node[1][n][0] != None:

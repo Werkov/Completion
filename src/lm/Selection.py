@@ -28,7 +28,7 @@ class T9SuggestionSelector:
                 self.map[key] = [word]
         
 
-    def getSuggestions(self, context, prefix=None):
+    def getSuggestions(self, context, prefix=""):
         if prefix == None or prefix not in self.map:
             return []
         return self.map[prefix]
@@ -38,17 +38,17 @@ class SuggestionSelector:
         self.bigramDict = bigramDict
         self.dict = dict
 
-    def getSuggestions(self, context, prefix=None):
+    def getSuggestions(self, context, prefix=""):
         lastToken = context[len(context)-1]
         if self.bigramDict == None and self.dict == None:
             return []
         elif self.bigramDict == None and self.dict != None:
-            if prefix == None:
+            if prefix == "":
                 return []
             else:
                 return [token for token in self.dict if token.startswith(prefix)]
         else: # bigram is more important  elif self.bigramDict != None and self.dict == None:
-            if prefix != None:
+            if prefix != "":
                 if lastToken not in self.bigramDict:
                     return [token for token in self.bigramDict.keys() if token.startswith(prefix)]
                 else:

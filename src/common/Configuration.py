@@ -1,13 +1,16 @@
+from ui.Filter import EndingAggegator
 from lm.origin import *
 from lm.Selection import *
 from lm.Sorting import *
+from ui.Filter import *
 
 
 class Configuration:
-    selector = None
-    sorter = None
-    userInputModel = None
-    contextLength = 2
+    selector        = None
+    sorter          = None
+    filter          = None
+    userInputModel  = None
+    contextLength   = 2
 
 class ConfigurationBuilder:
     _methodPrefix = "_create"
@@ -31,6 +34,7 @@ class ConfigurationBuilder:
         slm = SimpleLangModel(open("../sample-data/povidky.txt"))
         result.selector = SuggestionSelector(bigramDict=slm.search)
         result.sorter = SuggestionSorter(klm)
+        result.filter = EndingAggegator()
 
         return result
     
