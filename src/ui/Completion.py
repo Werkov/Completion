@@ -122,7 +122,7 @@ class TextEdit(QtGui.QPlainTextEdit):
     
     def _prefix(self):
         tail = self._tail()
-        if len(tail) == 0 or tail[-1][0] == Tokenizer.TYPE_WHITESPACE:
+        if len(tail) == 0 or tail[-1][0] == Tokenizer.TYPE_WHITESPACE or tail[-1][0] == Tokenizer.TYPE_DELIMITER:
             return ""
         else:
             return tail[-1][1] # return string only
@@ -132,7 +132,7 @@ class TextEdit(QtGui.QPlainTextEdit):
         if len(tail) == 0:
             return []
         
-        if tail[-1][0] == Tokenizer.TYPE_WHITESPACE:
+        if tail[-1][0] == Tokenizer.TYPE_WHITESPACE or tail[-1][0] == Tokenizer.TYPE_DELIMITER:
             return [token for token in tail if token[0] != Tokenizer.TYPE_WHITESPACE][-self.contextLength:]
         else:
             return [token for token in tail[:-1] if token[0] != Tokenizer.TYPE_WHITESPACE][-self.contextLength:]
@@ -235,7 +235,7 @@ class TextEdit(QtGui.QPlainTextEdit):
     def _handleKeyPress(self, event):
         if event.text() != "" and event.text() in self.consumeSpaceSet:
             self._consumeLastSpace()
-        elif event.text() == " ":
+        else:
             self.lastSpaceReason = self.UserReason
         QtGui.QPlainTextEdit.keyPressEvent(self, event)
 
