@@ -52,37 +52,37 @@ class TextEdit(QtGui.QPlainTextEdit):
         
     def _initPopup(self):
         self.popup = ListView(self)
+        self.popup.setWindowFlags(QtCore.Qt.ToolTip)
         self.popup.itemClicked.connect(self._popupItemClickedHandler)
         self.setPopupState(self.Popup_Hidden)
 
-
-    def popupState(self):
-        if self.popup.isVisible():
-            return self.Popup_Focused if self.popup.hasFocus() else self.Popup_Visible
-        else:
-            return self.Popup_Hidden
         
-    def setPopupState(self, state):
+    def setPopupState(self, state, refresh=True):
+        self.popupState = state
         if state == self.Popup_Hidden:
             self.popup.setVisible(False)
             self.setFocus()
         elif state == self.Popup_Visible:
-            self._refreshPopup()
+            if refresh:
+                self._refreshPopup()
             self.popup.setVisible(True)
             self.setFocus()
         elif state == self.Popup_Focused:
-            self._refreshPopup()
+            if refresh:
+                self._refreshPopup()
+                if self.popup.count() > 0:
+                    self.popup.item(0).setSelected(True)
+            
             self.popup.setVisible(True)
-            self.popup.setFocus()
-            if self.popup.count() > 0:
-                self.popup.item(0).setSelected(True)
+            self.popup.setFocus()            
         else:
             raise ValueError()
 
     def _refreshPopup(self):
         tc = self.textCursor()
         tc.movePosition(QtGui.QTextCursor.Left, QtGui.QTextCursor.MoveAnchor, len(self._prefix()))
-        self.popup.move(self.cursorRect(tc).right(), self.cursorRect(tc).bottom())
+        position = QtCore.QPoint(self.cursorRect(tc).right(), self.cursorRect(tc).bottom())
+        self.popup.move(self.mapToGlobal(position))
 
         self.popup.clear()
         for suggestion, probability, partial in self._currentSuggestions():
@@ -158,7 +158,7 @@ class TextEdit(QtGui.QPlainTextEdit):
 
     def keyPressEvent(self, event):
         handled = False
-        if self.popupState() == self.Popup_Hidden:
+        if self.popupState == self.Popup_Hidden:
             # manual invokation
             if event.key() == QtCore.Qt.Key_Space and event.modifiers() & QtCore.Qt.ControlModifier:
                 self.setPopupState(self.Popup_Visible)
@@ -170,7 +170,7 @@ class TextEdit(QtGui.QPlainTextEdit):
                 if len(self._currentSuggestions()) > 0:
                     self.setPopupState(self.Popup_Visible)
 
-        elif self.popupState() == self.Popup_Visible:
+        elif self.popupState == self.Popup_Visible:
             # manual hiding
             if event.key() == QtCore.Qt.Key_Escape:
                 self.setPopupState(self.Popup_Hidden)
@@ -181,7 +181,7 @@ class TextEdit(QtGui.QPlainTextEdit):
                     self.popup.selectionMove(-1)
                 else:
                     self.popup.selectionMove(1)
-                self.setPopupState(self.Popup_Focused)
+                self.setPopupState(self.Popup_Focused, False)
                 handled = True
             elif self._isFastAcceptKey(event):
                 self._acceptSuggestion(event)
@@ -199,7 +199,7 @@ class TextEdit(QtGui.QPlainTextEdit):
                 else:
                     self.setPopupState(self.Popup_Hidden)
 
-        elif self.popupState() == self.Popup_Focused:
+        elif self.popupState == self.Popup_Focused:
             # manual hiding
             if event.key() == QtCore.Qt.Key_Escape:
                 self.setPopupState(self.Popup_Hidden)
@@ -285,5 +285,4 @@ class TextEdit(QtGui.QPlainTextEdit):
         tc.removeSelectedText()
         self.cursorMoveReason = self.InnerReason
         self.setTextCursor(tc)
-        print("eating last space")
 
