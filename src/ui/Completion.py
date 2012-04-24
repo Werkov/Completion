@@ -1,6 +1,5 @@
 from PyQt4 import QtCore
 from PyQt4 import QtGui
-
 from common.Tokenize import Tokenizer
 
 
@@ -17,6 +16,13 @@ class ListView(QtGui.QListWidget):
         row = self.currentRow() + shift
         row = (self.count() + row) % self.count()
         self.setCurrentRow(row)
+    def pageMove(self, direction):
+        if direction < 0:
+            newPos = self.moveCursor(self.MovePageUp, QtCore.Qt.NoModifier)
+        else:
+            newPos = self.moveCursor(self.MovePageDown, QtCore.Qt.NoModifier)
+        if newPos.isValid():
+            self.setCurrentIndex(newPos)
         
 
 class TextEdit(QtGui.QPlainTextEdit):
@@ -55,6 +61,7 @@ class TextEdit(QtGui.QPlainTextEdit):
         self.popup.setWindowFlags(QtCore.Qt.ToolTip)
         self.popup.itemClicked.connect(self._popupItemClickedHandler)
         self.setPopupState(self.Popup_Hidden)
+
 
         
     def setPopupState(self, state, refresh=True):
@@ -111,7 +118,7 @@ class TextEdit(QtGui.QPlainTextEdit):
         self._acceptSuggestion(None)
         
     def _currentSuggestions(self):
-        context = [""]*(self.contextLength - len(self._context())) + [token[1] for token in self._context()]
+        context = [""] * (self.contextLength - len(self._context())) + [token[1] for token in self._context()]
         prefix = self._prefix()
         rawSuggestions = self.sorter.getSortedSuggestions(context, self.selector.getSuggestions(context, prefix))
         suggestions = [(suggestion, probability, False) for suggestion, probability in rawSuggestions]
@@ -176,11 +183,16 @@ class TextEdit(QtGui.QPlainTextEdit):
                 self.setPopupState(self.Popup_Hidden)
                 handled = True
             # selection change
-            elif event.key() == QtCore.Qt.Key_Up or event.key() == QtCore.Qt.Key_Down: #TODO pgup/down
+            elif event.key() in [QtCore.Qt.Key_Up, QtCore.Qt.Key_Down, QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
                 if event.key() == QtCore.Qt.Key_Up:
                     self.popup.selectionMove(-1)
-                else:
+                elif event.key() == QtCore.Qt.Key_Down:
                     self.popup.selectionMove(1)
+                elif event.key() == QtCore.Qt.Key_PageUp:
+                    self.popup.pageMove(-1)
+                elif event.key() == QtCore.Qt.Key_PageDown:
+                    self.popup.pageMove(1)
+
                 self.setPopupState(self.Popup_Focused, False)
                 handled = True
             elif self._isFastAcceptKey(event):
@@ -205,11 +217,17 @@ class TextEdit(QtGui.QPlainTextEdit):
                 self.setPopupState(self.Popup_Hidden)
                 handled = True
             # selection change
-            elif event.key() == QtCore.Qt.Key_Up or event.key() == QtCore.Qt.Key_Down: #TODO pgup/down
+            elif event.key() in [QtCore.Qt.Key_Up, QtCore.Qt.Key_Down, QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
                 if event.key() == QtCore.Qt.Key_Up:
                     self.popup.selectionMove(-1)
-                else:
+                elif event.key() == QtCore.Qt.Key_Down:
                     self.popup.selectionMove(1)
+                elif event.key() == QtCore.Qt.Key_PageUp:
+                    self.popup.pageMove(-1)
+                elif event.key() == QtCore.Qt.Key_PageDown:
+                    self.popup.pageMove(1)
+
+                self.setPopupState(self.Popup_Focused, False)
                 handled = True
             elif self._isAcceptKey(event):
                 self._acceptSuggestion(event)
