@@ -13,10 +13,17 @@ $(BIN_DIR)/%.o: $(SRC_DIR)/%.cc
 
 .PHONY: all clean
 	
-all: $(MARKER)
+all: $(MARKER) build_binary
 
 $(MARKER): $(addprefix $(BIN_DIR)/, $(OBJ))
 	touch $@
+
+build_binary: $(addprefix $(BIN_DIR)/, $(OBJ))
+	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) $(SRC_DIR)/lm/build_binary.cc $(addprefix $(BIN_DIR)/, $(OBJ)) -lz -o build_binary
+
+leak_test: $(addprefix $(BIN_DIR)/, $(OBJ))
+	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) $(SRC_DIR)/leak_test.cc $(addprefix $(BIN_DIR)/, $(OBJ)) -lz -o leak_test
+
 
 clean:
 	rm -f $(MARKER) $(addprefix $(BIN_DIR)/, $(OBJ))
