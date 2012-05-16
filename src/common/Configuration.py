@@ -3,14 +3,16 @@ from lm.origin import *
 from lm.Selection import *
 from lm.Sorting import *
 from ui.Filter import *
+import common.Tokenize
 
 
 class Configuration:
-    selector        = None
-    sorter          = None
-    filter          = None
-    userInputModel  = None
-    contextLength   = 2
+    selector            = None
+    sorter              = None
+    filter              = None
+    userInputModel      = None
+    contextLength       = 2
+    sentenceTokenizer   = common.Tokenize.SentenceTokenizer
 
 class ConfigurationBuilder:
     _methodPrefix = "_create"
@@ -35,6 +37,27 @@ class ConfigurationBuilder:
         result.selector = SuggestionSelector(bigramDict=slm.search)
         result.sorter = SuggestionSorter(klm)
         result.filter = EndingAggegator()
+
+        return result
+
+    def _createWiki():
+        result = Configuration()
+
+        klm = KenLMModel("../large-data/wiki.ces.arpa")
+        slm = SimpleLangModel(open("../sample-data/povidky.txt"))
+        result.selector = SuggestionSelector(bigramDict=slm.search)
+        result.sorter = SuggestionSorter(klm)
+        #result.filter = EndingAggegator()
+
+        return result
+    def _createWikivoc():
+        result = Configuration()
+
+        klm = KenLMModel("../large-data/wiki.ces.arpa")
+        slm = SimpleLangModel(open("../sample-data/povidky.txt"))
+        result.selector = SuggestionSelector(dict=klm.dictionary)
+        result.sorter = SuggestionSorter(klm)
+        #result.filter = EndingAggegator()
 
         return result
     

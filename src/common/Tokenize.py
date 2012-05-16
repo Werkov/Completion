@@ -15,8 +15,8 @@ class Tokenizer:
 
     masks = [
         (TYPE_WHITESPACE, "\s+"),
-        (TYPE_WORD, "\w+"),
         (TYPE_NUMBER, "\d+"),
+        (TYPE_WORD, "\w+"),
         (TYPE_DELIMITER, "[,\\.:;\"'\\-\\?!]"),
         (TYPE_OTHER, ".")
     ]
@@ -37,17 +37,20 @@ class Tokenizer:
                 return (type, m.group(0))
         return None
 
+
+
 class TextFileTokenizer (Tokenizer):
-    """Parse content of a file into sequence of tokens, skips whitespace and perform true-casing."""
+    """
+    Parse content of a file into sequence of tokens, skips whitespace.
+    Token is tuple of (token type, token string representation).
+    """
   
-        
     def __init__(self, file):
-        """Use file-like object as an input"""
-        super(TextFileTokenizer, self).__init__()
+        """Use file-like object as an input."""
+        super().__init__()
         self.file = file
         self.currPos = 0
         self.currLine = ""
-        self.beginSentence = True # used for detecting begining of sentece
 
     def __iter__(self):
         return self
@@ -64,25 +67,96 @@ class TextFileTokenizer (Tokenizer):
             token = self._getToken(self.currLine, self.currPos)
             self.currPos += len(token[1])
 
-        if token[0] == Tokenizer.TYPE_DELIMITER and token[1] in Tokenizer.sentenceDelimiters:
-            self.beginSentence = True
-        elif self.beginSentence:
-            token = token[0], str.lower(token[1])
-            self.beginSentence = False
-        
         return token
 
 class StringTokenizer(Tokenizer):
-    """Parse string into list of tokens."""
-    def __init__(self):
-        super(StringTokenizer, self).__init__()
+    """
+    Parse string into sequence of tokens.
 
-    def tokenize(self, text):
-        position = 0
-        tokens = []
-        token = self._getToken(text, position)
-        while token != None:
-            tokens.append(token)
-            position += len(token[1])
-            token = self._getToken(text, position)
-        return tokens
+    :text string to parse
+    """
+    def __init__(self, text):
+        super().__init__()
+        self.reset(text)
+
+    def reset(self, text):
+        self.text = text
+        self.position = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        """Return current token as a tuple (type, stringData) and conforms iterator protocol."""
+        token = Tokenizer.TYPE_WHITESPACE, ""
+        while token[0] == Tokenizer.TYPE_WHITESPACE:
+            if self.position == len(self.text):
+                raise StopIteration
+            token = self._getToken(self.text, self.position)
+            self.position += len(token[1])
+
+        return token
+
+class SentenceTokenizer:
+    """
+    Divide given sequence of tokens into sequence of lists, each representing one sentence.
+
+    Also performs true-casing.
+    """
+
+    sentenceDelimiters = {".", "!", "?"}
+
+    def __init__(self, tokens):
+        self.reset(tokens)
+
+    def reset(self, tokens):
+        self.tokens = tokens
+
+    def __iter__(self):
+        result = []
+        endOfSentence = True
+
+        for t in self.tokens:
+            if endOfSentence:
+                t = t[0], t[1].lower()
+                endOfSentence = False
+
+            result.append(t)
+            if t[1] in self.sentenceDelimiters:
+                yield result
+                result = []
+                endOfSentence = True
+                
+        if len(result) > 0:
+            yield result
+
+
+
+class TokenFilter:
+    """
+    Accepts sequence of sentences and converts each token tuple into string
+    representation of that tuple and substitutes special tokens types for special
+    strings.
+    """
+
+    numericToken = "<num>"
+    beginSenteceToken = "<s>"
+    endSentenceToken = "</s>"
+    unknownToken= "<unk>"
+
+    def __init__(self, sentences):
+        self.reset(sentences)
+
+    def reset(self, sentences):
+        self.sentences = sentences
+
+    def __iter__(self):
+        for sentence in self.sentences:
+            sentence = map(self._mapToken, sentence)
+            yield sentence
+
+    def _mapToken(self, token):
+        if token[0] == Tokenizer.TYPE_NUMBER:
+            return self.numericToken
+        else:
+            return token[1]
