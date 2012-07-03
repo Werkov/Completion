@@ -25,17 +25,17 @@ PyObject* Model::vocabulary() {
 }
 
 
-float Model::probability(const std::string &token, bool changeState) {
+float Model::probability(const std::string &token, bool changeContext) {
     if(this->model_ == 0){
         PyErr_SetString(PyExc_RuntimeError, std::string("Model not loaded.").c_str());
         return 0;
     }
     lm::ngram::State outState;
     float result = this->model_->Score(this->state_, this->model_->GetVocabulary().Index(token), outState);
-    if(changeState){
+    if(changeContext){
         this->state_ = outState;
     }
-    return result * 3.3219281; //scale from base 10 to base 2
+    return result > -30 ? result * 3.3219281 : -100; //scale from base 10 to base 2, crop to -100
 }
 
 void Model::reset(const std::vector<std::string>& context) {

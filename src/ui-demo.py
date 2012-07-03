@@ -3,8 +3,9 @@ import sys
 
 from PyQt4 import QtGui
 from common.Configuration import ConfigurationBuilder
-from common.Tokenize import StringTokenizer
+from common.Tokenize import StringTokenizer, SentenceTokenizer
 import ui.Completion
+import ui.Filter
 
 configBuilder = ConfigurationBuilder()
 
@@ -21,14 +22,16 @@ class Window(QtGui.QWidget):
 
         config = configBuilder[configName]
 
-        self.txtMain = ui.Completion.TextEdit(self)
+        contextHandler = ui.Completion.ContextHandler(StringTokenizer(), SentenceTokenizer())
+        contextHandler.addListener(config.selector)
 
+        capitalizeFilter = ui.Filter.SentenceCapitalizer(contextHandler)
+
+        self.txtMain                = ui.Completion.TextEdit(self)
         self.txtMain.selector       = config.selector
-        self.txtMain.sorter         = config.sorter
-        self.txtMain.langModel      = config.userInputModel
-        self.txtMain.contextLength  = config.contextLength
         self.txtMain.filter         = config.filter
-        self.txtMain.tokenizer      = StringTokenizer()
+        self.txtMain.contextHandler = contextHandler
+        self.txtMain.addFilter(capitalizeFilter)
 
         layout = QtGui.QVBoxLayout(self)
         layout.addWidget(self.txtMain)

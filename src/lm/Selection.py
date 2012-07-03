@@ -1,5 +1,6 @@
 import string
 import unicodedata
+from collections import defaultdict
 
 class T9SuggestionSelector:
     keys = {
@@ -58,4 +59,31 @@ class SuggestionSelector:
                     return []
                 else:
                     return self.bigramDict[lastToken].keys()
+
+class UniformSelector:
+    def __init__(self, dictionary):
+        self._dictionary = dictionary # TODO trie or don't use seriously
+
+    def shift(self, token):
+        pass
+
+    def reset(self):
+        pass
+
+    def suggestions(self, prefix):        
+        return [tok for tok in self._dictionary if tok.lower().startswith(prefix.lower())]
+
+class BigramSelector:
+    def __init__(self, arpafile):
+        bigramSection = False
+        self.bigrams = defaultdict(set)
+        for line in arpafile:
+            if line.startswith("\\2-grams"):
+                bigramSection = True
+                continue
+            if bigramSection:
+                if line.strip() == "":
+                    break
+                parts = line.split()
+                self.bigrams[parts[1]].add(parts[2])
 

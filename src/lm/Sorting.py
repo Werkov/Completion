@@ -4,7 +4,7 @@ class SuggestionSorter:
     def getSortedSuggestions(self, context, suggestions):
         tips = []
         for token in suggestions:
-            prob = self.languageModel.probability(context, token)
+            prob = self.languageModel.probability(token, False)
             tips.append((token, prob))
 
         tips.sort(key=lambda pair: -pair[1])

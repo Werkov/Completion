@@ -1,8 +1,8 @@
 from ui.Filter import EndingAggegator
-from lm.origin import *
 from lm.Selection import *
 from lm.Sorting import *
 from ui.Filter import *
+from lm.kenlm import Model as KenLMModel
 import common.Tokenize
 
 
@@ -24,8 +24,7 @@ class ConfigurationBuilder:
         result = Configuration()
 
         klm = KenLMModel("../sample-data/povidky.arpa")
-        result.selector = SuggestionSelector(dict=klm.dictionary)
-        result.sorter = SuggestionSorter(klm)
+        result.selector = UniformSelector("akát blýskavice cílovníci dálava erb Filipíny papír poprava".split())
         
         return result
 

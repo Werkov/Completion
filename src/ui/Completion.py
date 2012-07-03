@@ -1,7 +1,6 @@
 from PyQt4 import QtCore
 from PyQt4 import QtGui
-from common.Tokenize import Tokenizer
-
+from ui import TokenNormalizer
 
     
 
@@ -25,6 +24,44 @@ class ListView(QtGui.QListWidget):
             self.setCurrentIndex(newPos)
         
 
+class ContextHandler:
+    def __init__(self, tokenizer, sentencer, normalizer = None):
+        self.context = []
+        self.prefix = ""
+        self._tokenizer = tokenizer
+        self._sentencer = sentencer
+        self._normalizer = TokenNormalizer() if not normalizer else normalizer
+        self._listeners = []
+
+    def addListener(self, listener):
+        self._listeners.append(listener)
+
+    def update(self, text):
+        self._tokenizer.reset(text, True)
+        self._sentencer.reset(self._tokenizer)
+        self._normalizer.reset(self._sentencer)
+
+        tokens = list(self._normalizer)
+        self.prefix = self._tokenizer.uncompleteToken[0] if self._tokenizer.uncompleteToken else ""
+
+        if len(tokens) < len(self.context):
+            print("reseting whole model")
+            self._reset()
+            self.context = []
+
+        newTokens = tokens[len(self.context):]
+        for token in newTokens:
+            self._shift(token)
+        self.context += newTokens
+
+    def _reset(self):
+        for listener in self._listeners:
+            listener.reset()
+
+    def _shift(self, token):
+        for listener in self._listeners:
+            listener.shift(token)
+
 class TextEdit(QtGui.QPlainTextEdit):
     Popup_Hidden = 0
     Popup_Visible = 1
@@ -43,18 +80,16 @@ class TextEdit(QtGui.QPlainTextEdit):
 
     def __init__(self, parent=None):
         super(TextEdit, self).__init__(parent)
-        self.tokenizer      = None
+        self.contextHandler = None
         self.selector       = None
-        self.sorter         = None
-        self.filter         = None
-        self.langModel      = None
-        self.contextLength  = 3
+        self._filters       = []
+
         self._initPopup()
                
         self.cursorPositionChanged.connect(self._cursorPositionChangedHandler)
         self.textChanged.connect(self._textChangedHandler)
-        self.cursorMoveReason = self.UserReason
-        self.lastSpaceReason = self.UserReason
+        self.cursorMoveReason   = self.UserReason
+        self.lastSpaceReason    = self.UserReason
         
     def _initPopup(self):
         self.popup = ListView(self)
@@ -86,6 +121,7 @@ class TextEdit(QtGui.QPlainTextEdit):
             raise ValueError()
 
     def _refreshPopup(self):
+        self._updateContext()
         tc = self.textCursor()
         tc.movePosition(QtGui.QTextCursor.Left, QtGui.QTextCursor.MoveAnchor, len(self._prefix()))
         position = QtCore.QPoint(self.cursorRect(tc).right(), self.cursorRect(tc).bottom())
@@ -106,62 +142,35 @@ class TextEdit(QtGui.QPlainTextEdit):
         self.cursorMoveReason = self.UserReason
 
     def _textChangedHandler(self):
-        if self.langModel:
-            # provide only text before cursor (without the last token)
-            tc = self.textCursor()
-            tc.movePosition(QtGui.QTextCursor.WordLeft, QtGui.QTextCursor.MoveAnchor, 1)
-            tc.movePosition(QtGui.QTextCursor.Start, QtGui.QTextCursor.KeepAnchor)
-            self.langModel.updateUserInput(tc.selectedText())
+        pass # update tokens?
 
 
     def _popupItemClickedHandler(self, item):
         self._acceptSuggestion(None)
         
     def _currentSuggestions(self):
-        context = [""] * (self.contextLength - len(self._context())) + [token[1] for token in self._context()]
-        prefix = self._prefix()
-        rawSuggestions = self.sorter.getSortedSuggestions(context, self.selector.getSuggestions(context, prefix))
-        suggestions = [(suggestion, probability, False) for suggestion, probability in rawSuggestions]
-        if self.filter != None:
-            return self.filter.filter(suggestions, prefix)
-        else:
-            return suggestions    
-    
+        self._updateContext()
+        print(self.contextHandler.context)
+        ll = self.selector.suggestions(self.contextHandler.prefix)
+        # TODO probabilities
+        ll = [(tok, -100, False) for tok in ll]
+
+        for filter in self._filters:
+            ll = map(filter, ll)
+
+        ll = list(ll)
+        ll.sort(key=lambda a: a[1], reverse=True)
+
+        return ll
+
     def _prefix(self):
-        tail = self._tail()
-        if len(tail) == 0 or tail[-1][0] == Tokenizer.TYPE_WHITESPACE or tail[-1][0] == Tokenizer.TYPE_DELIMITER:
-            return ""
-        else:
-            return tail[-1][1] # return string only
-
-    def _context(self):
-        tail = self._tail()
-        if len(tail) == 0:
-            return []
-        
-        if tail[-1][0] == Tokenizer.TYPE_WHITESPACE or tail[-1][0] == Tokenizer.TYPE_DELIMITER:
-            return [token for token in tail if token[0] != Tokenizer.TYPE_WHITESPACE][-self.contextLength:]
-        else:
-            return [token for token in tail[:-1] if token[0] != Tokenizer.TYPE_WHITESPACE][-self.contextLength:]
-
-    def _tail(self):
-        tc = self.textCursor()
-        # contextLength is in own tokens, therefore we take k-times more words (word + whitespace + reserve)
-        tc.movePosition(QtGui.QTextCursor.WordLeft, QtGui.QTextCursor.KeepAnchor, self.contextLength * 3)
-        return self.tokenizer.tokenize(tc.selectedText())
-        
-#    TODO trigger base model data push
-#    def _lastTokenPosition(self):
-#        """Return position behind last character of last token before cursor."""
-#        tail = self._getTail()
-#        if len(tail) == 0:
-#            return 0
-#        else:
-#            cursorPosition = self.textCursor().position()
-#            if tail[-1][0] == Tokenizer.TYPE_WHITESPACE:
-#                return cursorPosition - len(tail[-1][1])
-#            else:
-#                return cursorPosition
+        self._updateContext()
+        return self.contextHandler.prefix
+    
+    def _updateContext(self):
+        cursorPosition = self.textCursor().position()
+        textContent = self.toPlainText()[0:cursorPosition]
+        self.contextHandler.update(textContent)
 
     def keyPressEvent(self, event):
         handled = False
@@ -248,7 +257,6 @@ class TextEdit(QtGui.QPlainTextEdit):
         if not handled:
             self._handleKeyPress(event)
 
-        print(self._context(), ": ", self._prefix())
 
     def _handleKeyPress(self, event):
         if event.text() != "" and event.text() in self.consumeSpaceSet:
@@ -303,4 +311,7 @@ class TextEdit(QtGui.QPlainTextEdit):
         tc.removeSelectedText()
         self.cursorMoveReason = self.InnerReason
         self.setTextCursor(tc)
+
+    def addFilter(self, filter):
+        self._filters.append(filter)
 
