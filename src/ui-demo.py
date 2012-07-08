@@ -1,8 +1,9 @@
 #!/usr/bin/python3
+from common.Configuration import DebugConfiguration
 import sys
 
 from PyQt4 import QtGui
-from common.Configuration import ConfigurationBuilder
+from common.Configuration import ConfigurationBuilder, DebugConfiguration
 from common.Tokenize import StringTokenizer, SentenceTokenizer
 import ui.Completion
 import ui.Filter
@@ -20,26 +21,15 @@ class Window(QtGui.QWidget):
         self.center()
         self.setWindowTitle('Completion test')
 
-        config = configBuilder[configName]
-
-        contextHandler = ui.Completion.ContextHandler(StringTokenizer(), SentenceTokenizer())
-        contextHandler.addListener(config.selector)
-        contextHandler.addListener(config.languageModel)
-
-        capitalizeFilter    = ui.Filter.SentenceCapitalizer(contextHandler)
-        probFilter          = ui.Filter.ProbabilityEstimator(config.languageModel)
-        limitFilter         = ui.Filter.SuggestionsLimiter()
-        def sortFilter(suggestions):
-            return sorted(suggestions, key=lambda sugg: (sugg[1], len(sugg[0])), reverse=True)
+        #config = configBuilder[configName]
+        config = DebugConfiguration() # TODO retrieve configuration intelligently
 
         self.txtMain                = ui.Completion.TextEdit(self)
         self.txtMain.selector       = config.selector
-        self.txtMain.contextHandler = contextHandler
+        self.txtMain.contextHandler = config.contextHandler
 
-        self.txtMain.addFilter(probFilter)
-        self.txtMain.addFilter(sortFilter)
-        self.txtMain.addFilter(limitFilter)
-        self.txtMain.addFilter(capitalizeFilter)
+        for filter in config.filterChain:
+            self.txtMain.addFilter(filter)
 
         layout = QtGui.QVBoxLayout(self)
         layout.addWidget(self.txtMain)
