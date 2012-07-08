@@ -24,13 +24,21 @@ class Window(QtGui.QWidget):
 
         contextHandler = ui.Completion.ContextHandler(StringTokenizer(), SentenceTokenizer())
         contextHandler.addListener(config.selector)
+        contextHandler.addListener(config.languageModel)
 
-        capitalizeFilter = ui.Filter.SentenceCapitalizer(contextHandler)
+        capitalizeFilter    = ui.Filter.SentenceCapitalizer(contextHandler)
+        probFilter          = ui.Filter.ProbabilityEstimator(config.languageModel)
+        limitFilter         = ui.Filter.SuggestionsLimiter()
+        def sortFilter(suggestions):
+            return sorted(suggestions, key=lambda sugg: (sugg[1], len(sugg[0])), reverse=True)
 
         self.txtMain                = ui.Completion.TextEdit(self)
         self.txtMain.selector       = config.selector
-        self.txtMain.filter         = config.filter
         self.txtMain.contextHandler = contextHandler
+
+        self.txtMain.addFilter(probFilter)
+        self.txtMain.addFilter(sortFilter)
+        self.txtMain.addFilter(limitFilter)
         self.txtMain.addFilter(capitalizeFilter)
 
         layout = QtGui.QVBoxLayout(self)
@@ -49,7 +57,7 @@ def main():
         print("Usage: {} config-name".format(sys.argv[0]))
         sys.exit(1)
     app = QtGui.QApplication(sys.argv)
-    win = Window(sys.argv[1])
+    _ = Window(sys.argv[1])
     sys.exit(app.exec_())
 
 if __name__ == '__main__':

@@ -25,5 +25,11 @@ class LangModel:
         """
         return -100
 
+    def shift(self, token):
+        """
+        Change model's current state with given token.
+        """
+        self.probability(token, True)
+
 
 

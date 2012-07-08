@@ -1,18 +1,14 @@
 from ui.Filter import EndingAggegator
 from lm.Selection import *
 from lm.Sorting import *
-from ui.Filter import *
 from lm.kenlm import Model as KenLMModel
 import common.Tokenize
 
 
 class Configuration:
     selector            = None
-    sorter              = None
-    filter              = None
-    userInputModel      = None
-    contextLength       = 2
     sentenceTokenizer   = common.Tokenize.SentenceTokenizer
+    languageModel       = None
 
 class ConfigurationBuilder:
     _methodPrefix = "_create"
@@ -23,8 +19,9 @@ class ConfigurationBuilder:
     def _createDebug():
         result = Configuration()
 
-        klm = KenLMModel("../sample-data/povidky.arpa")
-        result.selector = UniformSelector("akát blýskavice cílovníci dálava erb Filipíny papír poprava".split())
+        result.languageModel = KenLMModel("../sample-data/povidky.arpa")
+        result.selector = UniformSelector(result.languageModel.vocabulary())
+        #result.selector = UniformSelector("akát blýskavice cílovníci dálava erb Filipíny hrachovina ibis jasmín bílý krákorá lupíneček mává národ papír poprava".split())
         
         return result
 

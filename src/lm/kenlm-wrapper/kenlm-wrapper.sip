@@ -111,5 +111,9 @@ Word is used to change the state of model unless specified changeState = False.
 
 For unknown words -100 is returned.
 %End
+    void shift(const std::string &token);
+%Docstring
+Change model's current state with given token.
+%End
 
 };

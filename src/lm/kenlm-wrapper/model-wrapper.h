@@ -15,6 +15,7 @@ public:
     PyObject* vocabulary();
     void reset(const std::vector<std::string>& context = std::vector<std::string>());
     float probability(const std::string &token, bool changeContext = true);
+    void shift(const std::string &token);
 private:
     lm::ngram::QuantArrayTrieModel* model_;
     TokenDictionary* enumerate_vocab_; //model wrapper owner until Vocabulary is filled

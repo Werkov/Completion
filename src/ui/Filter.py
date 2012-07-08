@@ -1,7 +1,9 @@
 import math
+import itertools
 
 from common import Trie
 import common.Tokenize
+
 
 class EndingAggegator:
     """Group suggestions that are identical at the first 'len(preifx) + leastCommonPrefix' characters."""
@@ -55,9 +57,31 @@ class SentenceCapitalizer:
     def __init__(self, contextHandler):
         self._contextHandler = contextHandler
 
-    def __call__(self, suggestion):
+    def __call__(self, suggestions):
+        return map(self._process, suggestions)
+
+    def _process(self, suggestion):
         if self._contextHandler.context[-1] == common.Tokenize.TOKEN_BEG_SENTENCE \
             or self._contextHandler.context[-1] == common.Tokenize.TOKEN_END_SENTENCE:
             return (suggestion[0][0].upper() + suggestion[0][1:], suggestion[1], suggestion[2])
         else:
             return suggestion
+
+class ProbabilityEstimator:
+    def __init__(self, languageModel):
+        self._languageModel = languageModel
+
+    def __call__(self, suggestions):
+        return map(self._process, suggestions)
+
+    def _process(self, suggestion):
+        return (suggestion[0], self._languageModel.probability(suggestion[0], False), suggestion[2])
+
+class SuggestionsLimiter:
+    def __init__(self, minProbability = -10, maxCount = 10):
+        self._minProbability = minProbability
+        self._maxCount = maxCount
+
+    def __call__(self, suggestions):
+        probLimited = itertools.takewhile(lambda sugg: sugg[1] >= self._minProbability, suggestions)
+        return itertools.islice(probLimited, self._maxCount)

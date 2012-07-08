@@ -38,6 +38,10 @@ float Model::probability(const std::string &token, bool changeContext) {
     return result > -30 ? result * 3.3219281 : -100; //scale from base 10 to base 2, crop to -100
 }
 
+void Model::shift(const std::string &token) {
+    this->probability(token, true);
+}
+
 void Model::reset(const std::vector<std::string>& context) {
     if(this->model_ == 0){
         PyErr_SetString(PyExc_RuntimeError, std::string("Model not loaded.").c_str());

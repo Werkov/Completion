@@ -152,16 +152,13 @@ class TextEdit(QtGui.QPlainTextEdit):
         self._updateContext()
         print(self.contextHandler.context)
         ll = self.selector.suggestions(self.contextHandler.prefix)
-        # TODO probabilities
-        ll = [(tok, -100, False) for tok in ll]
+
+        ll = ((tok, -100, False) for tok in ll)
 
         for filter in self._filters:
-            ll = map(filter, ll)
+            ll = filter(ll)
 
-        ll = list(ll)
-        ll.sort(key=lambda a: a[1], reverse=True)
-
-        return ll
+        return list(ll)
 
     def _prefix(self):
         self._updateContext()
@@ -179,7 +176,7 @@ class TextEdit(QtGui.QPlainTextEdit):
             if event.key() == QtCore.Qt.Key_Space and event.modifiers() & QtCore.Qt.ControlModifier:
                 self.setPopupState(self.Popup_Visible)
                 handled = True
-            elif event.text().isprintable() and event.text() != "":
+            elif event.text() != "":
                 self.cursorMoveReason = self.InnerReason
                 self._handleKeyPress(event)
                 handled = True
@@ -211,7 +208,7 @@ class TextEdit(QtGui.QPlainTextEdit):
                     self.setPopupState(self.Popup_Visible)
                 else:
                     self.setPopupState(self.Popup_Hidden)
-            elif event.text().isprintable() and event.text() != "":
+            elif event.text() != "":
                 self.cursorMoveReason = self.InnerReason
                 self._handleKeyPress(event)
                 handled = True
@@ -245,7 +242,7 @@ class TextEdit(QtGui.QPlainTextEdit):
                     self.setPopupState(self.Popup_Visible)
                 else:
                     self.setPopupState(self.Popup_Hidden)
-            elif event.text().isprintable() and event.text() != "":
+            elif event.text() != "":
                 self.cursorMoveReason = self.InnerReason
                 self._handleKeyPress(event)
                 handled = True
