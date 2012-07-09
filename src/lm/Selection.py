@@ -61,6 +61,10 @@ class SuggestionSelector:
                     return self.bigramDict[lastToken].keys()
 
 class UniformSelector:
+    """
+    Simple context-less selector with O(n) prefix search where `n` is size of
+    the vocabulary.
+    """
     def __init__(self, dictionary):
         self._dictionary = dictionary # TODO trie or don't use seriously
 

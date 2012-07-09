@@ -6,7 +6,7 @@ import common.Tokenize
 
 
 class EndingAggegator:
-    """Group suggestions that are identical at the first 'len(preifx) + leastCommonPrefix' characters."""
+    """Group suggestions that are identical at the first 'len(prefix) + leastCommonPrefix' characters."""
     leastCommonPrefix = 3
     def filter(self, suggestions, prefix):
         class Node:
@@ -54,6 +54,9 @@ class EndingAggegator:
         return result
 
 class SentenceCapitalizer:
+    """
+    Suggestions starting a new sentence have capitalized first character.
+    """
     def __init__(self, contextHandler):
         self._contextHandler = contextHandler
 
@@ -68,6 +71,11 @@ class SentenceCapitalizer:
             return suggestion
 
 class ProbabilityEstimator:
+    """
+    Suggestions are "extended" by their probability in the lagnuage model.
+
+    Language model must be synchronized with the inserted text.
+    """
     def __init__(self, languageModel):
         self._languageModel = languageModel
 
@@ -75,9 +83,13 @@ class ProbabilityEstimator:
         return map(self._process, suggestions)
 
     def _process(self, suggestion):
-        return (suggestion[0], self._languageModel.probability(suggestion[0], False), suggestion[2])
+        return (suggestion, self._languageModel.probability(suggestion, False), False)
 
 class SuggestionsLimiter:
+    """
+    Limit the number of suggestions by the minimal (log 2) probability and
+    maximal count. This should reduce the cognitive load.
+    """
     def __init__(self, minProbability = -10, maxCount = 10):
         self._minProbability = minProbability
         self._maxCount = maxCount

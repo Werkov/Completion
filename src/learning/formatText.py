@@ -38,7 +38,7 @@ class TokenNormalizer:
 
 def formatFile(fin, fout):
     """
-    Collapse whitespace to single space and split text into sentences
+    Collapse whitespace to single space and split text into sentences.
 
     :fin    input file object
     :fout   output file object

@@ -1,16 +1,27 @@
 import ui.Filter
 from lm.Selection import *
-from lm.Sorting import *
 from lm.kenlm import Model as KenLMModel
 import common.Tokenize
 
 
 class Configuration:
+    """
+    Represents a container of service objects.
+
+    To access the desired object call it as a configuration instance attribute –
+    – either cached object is returned or factory method is called to create one.
+
+    Dependencies are hard-coded into the factory methods in descedants.
+    BEWARE of cycles in dependency graph.
+    """
     _cache              = dict()
     _params             = dict()
     _factoryPrefix      = "_create"
 
     def __init__(self, **kwargs):
+        """
+        Configuration can be parametrized via keyword arguments for use in factory methods.
+        """
         self._params = kwargs
         
     def __getattr__(self, name):

@@ -4,7 +4,6 @@ import sys
 
 from PyQt4 import QtGui
 from common.Configuration import ConfigurationBuilder, DebugConfiguration
-from common.Tokenize import StringTokenizer, SentenceTokenizer
 import ui.Completion
 import ui.Filter
 

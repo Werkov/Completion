@@ -15,10 +15,15 @@ TYPE_EMOTICON       = 7
 
 class Tokenizer:
     """
-    Base for tokenizer classes. Try matching specified patterns.
+    (Abstract) base for tokenizer classes. Try matching specified patterns.
     
     Considered patterns (and tokens returned by _getToken) are spefified
     within masks list. When ambiguous, first matches.
+
+    Token is a tuple of:
+        - string representation
+        - type (module constant TYPE_*)
+        - position of token begining (zero-based character count).
     """
 
     masks = [
@@ -29,9 +34,6 @@ class Tokenizer:
         (TYPE_DELIMITER, "[,\\.:;\"'\\-\\?!]"),
         (TYPE_OTHER, ".")
     ]
-
-    # Delimiters after which e.g. true-casing is applied.
-    sentenceDelimiters = set([".", "?", "!"])
 
     def __init__(self):
         self.regexps = []
@@ -50,8 +52,7 @@ class Tokenizer:
 
 class TextFileTokenizer (Tokenizer):
     """
-    Parse content of a file into sequence of tokens, skips whitespace.
-    Token is tuple of (token string representation, token type, token position).
+    Parse content of a file into sequence of tokens, skip whitespace.
     """
   
     def __init__(self, file):
@@ -65,8 +66,7 @@ class TextFileTokenizer (Tokenizer):
         return self
 
     def __next__(self):
-        """Return current token as a tuple (type, stringData) and conforms iterator protocol."""
-        token = TYPE_WHITESPACE, ""
+        token = TYPE_WHITESPACE, "", 0
         while token[0] == TYPE_WHITESPACE:
             if self.currPos == len(self.currLine):
                 self.currLine = self.file.readline()
@@ -80,15 +80,19 @@ class TextFileTokenizer (Tokenizer):
 
 class StringTokenizer(Tokenizer):
     """
-    Parse string into sequence of tokens.
+    Parse given string into sequence of tokens.
 
-    :text string to parse
+    When `onlyComplete` is set to True last token is omitted because it needn't
+    be complete (only tokens followed by another token are complete).
+
+    Last uncomplete token can be acceessed via `uncompleteToken` attribute.
     """
     def __init__(self, text = None, onlyComplete = False):
         super().__init__()
         self.reset(text, onlyComplete)
 
     def reset(self, text = None, onlyComplete = False):
+        """Used to recycle tokenizer object with new input."""
         self.text = text if text else ""
         self.position = 0
         self.onlyComplete = onlyComplete
@@ -98,7 +102,6 @@ class StringTokenizer(Tokenizer):
         return self
 
     def __next__(self):
-        """Return current token as a tuple (type, stringData) and conforms iterator protocol."""
         token = "", TYPE_WHITESPACE, self.position
         while token[1] == TYPE_WHITESPACE:
             if self.position == len(self.text):
@@ -119,6 +122,9 @@ class SentenceTokenizer:
     token.
 
     Also performs true-casing.
+
+    This simple implementation splits stream of tokens after chosen tokens (sentence
+    delimiters) and lowercases first token in a sentence.
     """
 
     sentenceDelimiters = {".", "!", "?"}

@@ -3,9 +3,8 @@ from PyQt4 import QtGui
 from ui import TokenNormalizer
 
     
-
-
 class ListView(QtGui.QListWidget):
+    """Display suggestions and don't steal focus from text input area."""
     def keyPressEvent(self, event):
         event.ignore()
 
@@ -25,6 +24,16 @@ class ListView(QtGui.QListWidget):
         
 
 class ContextHandler:
+    """
+    Keep components with state synchronized with input text.
+
+    Components (listeners) are considered to have a state that can be changed with incoming
+    token in only forward direction. Normally, state is changed gradually as the
+    text is typed; in the case of cursor moves/correcting text, components are
+    reset to the beginning state and "shifted" to current state.
+
+    Listeners must have `shift(token)` and `reset()` methods.
+    """
     def __init__(self, tokenizer, sentencer, normalizer = None):
         self.context = []
         self.prefix = ""
@@ -34,9 +43,11 @@ class ContextHandler:
         self._listeners = []
 
     def addListener(self, listener):
+        """Register a listener to keep in sync with text."""
         self._listeners.append(listener)
 
     def update(self, text):
+        """Call with the text that should be the new context."""
         self._tokenizer.reset(text, True)
         self._sentencer.reset(self._tokenizer)
         self._normalizer.reset(self._sentencer)
@@ -63,6 +74,20 @@ class ContextHandler:
             listener.shift(token)
 
 class TextEdit(QtGui.QPlainTextEdit):
+    """
+    UI text component with text completion feature.
+
+        - display text and suggestions (retrived from selector)
+        - accept user input
+        - handle user events
+        - assist writing whitespace
+
+    Suggestions returned by selector are processed by customizable filter chain,
+    expected output is a sequence of tuples with following fields:
+        0: str      suggestion text,
+        1: float    suggestion probability,
+        2: bool     partial suggestion (those aren't appended a space).
+    """
     Popup_Hidden = 0
     Popup_Visible = 1
     Popup_Focused = 2
@@ -152,8 +177,6 @@ class TextEdit(QtGui.QPlainTextEdit):
         self._updateContext()
         print(self.contextHandler.context)
         ll = self.selector.suggestions(self.contextHandler.prefix)
-
-        ll = ((tok, -100, False) for tok in ll)
 
         for filter in self._filters:
             ll = filter(ll)
@@ -310,5 +333,11 @@ class TextEdit(QtGui.QPlainTextEdit):
         self.setTextCursor(tc)
 
     def addFilter(self, filter):
+        """
+        Append filter to suggestions filter chain.
+        
+        Filter must be a callable that accepts the sequence of suggestions and
+        returns the modified sequence.
+        """
         self._filters.append(filter)
 
