@@ -1,27 +1,27 @@
 #!/usr/bin/python3
-from common.Configuration import DebugConfiguration
-import sys
 
 from PyQt4 import QtGui
-from common.Configuration import ConfigurationBuilder, DebugConfiguration
-import ui.Completion
-import ui.Filter
+import argparse
+import sys
 
-configBuilder = ConfigurationBuilder()
+
+import common.configuration
+import ui.Completion
+
+
 
 class Window(QtGui.QWidget):
-    def __init__(self, configName):
+    def __init__(self):
         super(Window, self).__init__()
-        self.initUI(configName)
+        self.initUI()
         self.show()
-    def initUI(self, configName):
+    def initUI(self):
         # window itself
         self.resize(640, 480)
         self.center()
         self.setWindowTitle('Completion test')
 
-        #config = configBuilder[configName]
-        config = DebugConfiguration() # TODO retrieve configuration intelligently
+        config = common.configuration.current
 
         self.txtMain                = ui.Completion.TextEdit(self)
         self.txtMain.selector       = config.selector
@@ -42,11 +42,21 @@ class Window(QtGui.QWidget):
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: {} config-name".format(sys.argv[0]))
-        sys.exit(1)
+    # initialize own parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file", help="text file to edit", type=argparse.FileType('r'), nargs='?')
+
+    # append subparsers for configuration parameters
+    subparsers = parser.add_subparsers(title='Configurations', metavar="CONFIGURATION")
+    common.configuration.fillSubparsers(subparsers)
+
+    # create configuration
+    args = parser.parse_args()
+    common.configuration.createFromArgs(args)
+
+    # start GUI
     app = QtGui.QApplication(sys.argv)
-    _ = Window(sys.argv[1])
+    _ = Window()
     sys.exit(app.exec_())
 
 if __name__ == '__main__':

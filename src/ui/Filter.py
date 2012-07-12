@@ -97,3 +97,23 @@ class SuggestionsLimiter:
     def __call__(self, suggestions):
         probLimited = itertools.takewhile(lambda sugg: sugg[1] >= self._minProbability, suggestions)
         return itertools.islice(probLimited, self._maxCount)
+
+class AddedCharacters:
+    """
+    Accept only those suggestions that are longer than prefix by given
+    difference.
+    Can be active only for nonempty prefix.
+    Works with simple suggestions (not tuples).
+    """
+    def __init__(self, contextHandler, difference = 0, emptyPrefix = False):
+        self._contextHandler = contextHandler
+        self._difference = difference
+        self._emptyPrefix = emptyPrefix
+
+    def __call__(self, suggestions):
+        if self._emptyPrefix and self._contextHandler.prefix == "":
+            return suggestions
+        return filter(self._condition, suggestions)
+
+    def _condition(self, suggestion):
+        return len(suggestion) > len(self._contextHandler.prefix) + self._difference
