@@ -1,6 +1,3 @@
-import sys
-sys.path.append("../")
-
 class TrieNode:
     """Unused"""    
     def __init__(self, data=None, parent=None):

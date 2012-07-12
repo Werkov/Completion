@@ -1,7 +1,3 @@
-import sys
-sys.path.append("../")
-
-
 class LangModel:
     """
     Language model that assigns probabilites to tokens
