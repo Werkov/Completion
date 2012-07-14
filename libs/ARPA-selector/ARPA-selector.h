@@ -25,10 +25,12 @@ public:
 
 
     /**
-     * Create selector whose ARPA model is saved in filename.
-     * File could be textfile or gzipped file.
+     * Create selector from ARPA file, gzipped ARPA file or binary file. 
+     * Serialization is optinal (default is BinarySerialization) and
+     * ARPASelector doesn't take ownership.
      * */
-    ARPASelector(const std::string & filename, BinarySerialization & serialization);
+    ARPASelector(const std::string & filename, BinarySerialization* serialization = 0);
+    
 
     /**
      * Update context with given token.
@@ -66,7 +68,6 @@ private:
     WordIndex context_;
 
     friend class BinarySerialization;
-
 };
 
 #endif // ARPA_SELECTOR_H

@@ -70,14 +70,20 @@ private:
 
 } // namespace sorting
 
-ARPASelector::ARPASelector(const std::string& filename, BinarySerialization& serialization) {
-    if(serialization.isBinary(filename)) {
-        serialization.loadFromFile(filename, this);
+ARPASelector::ARPASelector(const std::string& filename, BinarySerialization* serialization) {
+    BinarySerialization defaultSerialization;
+    if(serialization == 0) {
+        serialization = &defaultSerialization;
+    }
+
+    if(serialization->isBinary(filename)) {
+        serialization->loadFromFile(filename, this);
     } else {
         loadFromARPA(filename);
     }
     reset();
 }
+
 
 void ARPASelector::loadFromARPA(const std::string& filename) {
     VERBOSE_INFO("Loading ARPA file `" << filename << "`.");
