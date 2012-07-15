@@ -3,13 +3,12 @@ __all__ = [
     'Extended'
 ]
 
-from common.configuration import Configuration as Configuration
-
 import common.Tokenize
-import ui.Completion
-import ui.Filter
+from common.configuration import Configuration as Configuration
 import lm.Selection
 from lm.kenlm import Model as KenLMModel
+import ui.Completion
+import ui.Filter
 
 
 class Simple(Configuration):
@@ -19,6 +18,12 @@ class Simple(Configuration):
     def configureArgParser(parser):
         parser.add_argument('-lm', help='path to KenLM model file', required=True)
     
+
+    def _initialize(self):
+        # add listeners separately from creation to aviod cycles
+        contextHandler = self.contextHandler
+        contextHandler.addListener(self.selector)
+        contextHandler.addListener(self.languageModel)
 
     def _createFilterChain(self):
         return [
@@ -33,9 +38,7 @@ class Simple(Configuration):
         return lm.Selection.UniformSelector(self.languageModel.vocabulary())
 
     def _createContextHandler(self):
-        contextHandler = ui.Completion.ContextHandler(self.stringTokenizer, self.sentenceTokenizer)
-        contextHandler.addListener(self.selector)
-        contextHandler.addListener(self.languageModel)
+        contextHandler = ui.Completion.ContextHandler(self.stringTokenizer, self.sentenceTokenizer)        
         return contextHandler
 
     def _createLanguageModel(self):        
@@ -52,7 +55,7 @@ class Simple(Configuration):
         return ui.Filter.ProbabilityEstimator(self.languageModel)
 
     def _createLimitFilter(self):
-        return ui.Filter.SuggestionsLimiter()
+        return ui.Filter.SuggestionsLimiter(-20)
 
     def _createSortFilter(self):
         def sortFilter(suggestions):
@@ -72,12 +75,27 @@ class Extended(Simple):
     aliases     = ['e']
 
     def configureArgParser(parser):
-        parser.add_argument('-lm',  help='path to probability KenLM model file', required=True)
+        parser.add_argument('-lm', help='path to probability KenLM model file', required=True)
         parser.add_argument('-voc', help='path to vocabulary KenLM file', required=True)
 
-    
+
     def _createSelector(self):
         return lm.Selection.UniformSelector(KenLMModel(self._params['voc']).vocabulary())
+    def _createLanguageModel(self):
+        return KenLMModel(self._params['lm'])
+
+class Bigram(Simple):
+    description = """KenLM for probability evaluation and bigram selector based
+    on ARPA file."""
+    aliases     = ['b']
+
+    def configureArgParser(parser):
+        parser.add_argument('-lm', help='path to probability KenLM model file', required=True)
+        parser.add_argument('-sel', help='path to selector ARPA file', required=True)
+
+
+    def _createSelector(self):
+        return lm.Selection.BigramSelector(self._params['sel'], self.contextHandler)
     def _createLanguageModel(self):
         return KenLMModel(self._params['lm'])
 

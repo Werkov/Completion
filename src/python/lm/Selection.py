@@ -1,6 +1,8 @@
 import string
 import unicodedata
-from collections import defaultdict
+
+import lm.arpaselector
+import common.Tokenize
 
 class T9SuggestionSelector:
     keys = {
@@ -77,17 +79,22 @@ class UniformSelector:
     def suggestions(self, prefix):        
         return [tok for tok in self._dictionary if tok.lower().startswith(prefix.lower())]
 
-class BigramSelector:
-    def __init__(self, arpafile):
-        bigramSection = False
-        self.bigrams = defaultdict(set)
-        for line in arpafile:
-            if line.startswith("\\2-grams"):
-                bigramSection = True
-                continue
-            if bigramSection:
-                if line.strip() == "":
-                    break
-                parts = line.split()
-                self.bigrams[parts[1]].add(parts[2])
 
+class BigramSelector(lm.arpaselector.ARPASelector):
+    def __init__(self, filename, contextHandler):
+        lm.arpaselector.ARPASelector.__init__(self, filename)
+        self._contextHandler = contextHandler
+
+    def suggestions(self, prefix):
+        if len(prefix) > 0 \
+            and (self._contextHandler.context[-1] == common.Tokenize.TOKEN_BEG_SENTENCE \
+                 or self._contextHandler.context[-1] == common.Tokenize.TOKEN_END_SENTENCE):
+            prefix = prefix[0].lower() + prefix[1:]
+        if len(prefix) > 3:
+            l = self.unigramSuggestions(prefix)
+        else:
+            l = self.bigramSuggestions(prefix)
+
+        if len(l) > 10000:
+            l = [w for w in l if len(w) > 5] # experimental
+        return [] if len(l) > 10000 else l

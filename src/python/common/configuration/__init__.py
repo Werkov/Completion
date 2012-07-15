@@ -42,6 +42,11 @@ class Configuration:
 
         return self._cache[name]
 
+    def _initialize(self):
+        """To create objects immediately instead of lazy loading and break
+        dependency cycles."""
+        pass
+
     #
     # Argument parsing facilities
     #
@@ -78,4 +83,5 @@ def createFromArgs(args):
     """Initialize module attribute with chosen configuration."""
     global current
     current = args.confClass(**vars(args))
+    current._initialize()
 
