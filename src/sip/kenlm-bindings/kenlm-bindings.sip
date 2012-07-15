@@ -7,10 +7,11 @@ class Model {
 #include "model-wrapper.h"
 %End
 public:
-    Model(const std::string &str);
+    Model(const std::string &str, bool loadVocabulary = true);
     PyObject* vocabulary();
 %Docstring
 Return frozenset of tokens representing words in model's vocabulary.
+When vocabulary isn't loaded, return empty set.
 %End
     void reset(const std::vector<std::string>& context = std::vector<std::string>());
 %Docstring

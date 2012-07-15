@@ -10,7 +10,7 @@
 
 class Model {
 public:
-    Model(const std::string &str);
+    Model(const std::string &str, bool loadVocabulary = true);
     ~Model();
     PyObject* vocabulary();
     void reset(const std::vector<std::string>& context = std::vector<std::string>());

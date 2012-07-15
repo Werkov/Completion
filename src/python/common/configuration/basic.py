@@ -97,5 +97,5 @@ class Bigram(Simple):
     def _createSelector(self):
         return lm.Selection.BigramSelector(self._params['sel'], self.contextHandler)
     def _createLanguageModel(self):
-        return KenLMModel(self._params['lm'])
+        return KenLMModel(self._params['lm'], False)
 
