@@ -20,10 +20,12 @@ $(BIN_DIR)/%.o: $(SRC_DIR)/%.cpp $(SRC_DIR)/%.h
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
 
 
-all: $(addprefix $(BIN_DIR)/, $(OFILES))
+all: $(addprefix $(BIN_DIR)/, $(OFILES) build_binary)
 
+$(BIN_DIR)/build_binary: $(SRC_DIR)/build_binary.cpp $(addprefix $(BIN_DIR)/, $(OFILES))
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(addprefix $(BIN_DIR)/, $(OFILES)) $(KENOFILES) $(LIBS) -o $@ $<
 
 
 clean:
-	-rm -f $(addprefix $(BIN_DIR)/, $(OFILES))
+	-rm -f $(addprefix $(BIN_DIR)/, $(OFILES) build_binary)
 

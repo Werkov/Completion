@@ -123,13 +123,16 @@ void BinarySerialization::writeToFile(const std::string& filename, const ARPASel
     VERBOSE_INFO("Finished writing.");
 }
 
-bool BinarySerialization::isBinary(const std::string& filename) {
+bool BinarySerialization::isBinary(const std::string& filename, bool checkFormat) {
     util::scoped_fd fd(util::OpenReadOrThrow(filename.c_str()));
     // load and check header
     BinaryHeader binaryHeader, referenceHeader;
     util::ReadOrThrow(fd.get(), &binaryHeader, sizeof(BinaryHeader));
     referenceHeader.setReference();
     if(!memcmp(&(binaryHeader.magicBytes), &(referenceHeader.magicBytes), sizeof(referenceHeader.magicBytes))) {
+        if(checkFormat && !(binaryHeader == referenceHeader)) {
+            UTIL_THROW(lm::FormatLoadException, "File `" <<  filename << "` isn't binary compatible.");
+        }
         return true;
     } else {
         return false;
