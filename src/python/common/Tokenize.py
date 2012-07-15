@@ -31,7 +31,7 @@ class Tokenizer:
         (TYPE_NUMBER, "\d+"),
         (TYPE_WORD, "\w+"),
         (TYPE_EMOTICON, ":-[\)\(\[\]DpP]"),
-        (TYPE_DELIMITER, "[,\\.:;\"'\\-\\?!]"),
+        (TYPE_DELIMITER, "([,:;\"„“]+|\\.+|[\\?!]+|[\\-–—]+)"),
         (TYPE_OTHER, ".")
     ]
 
@@ -66,8 +66,8 @@ class TextFileTokenizer (Tokenizer):
         return self
 
     def __next__(self):
-        token = TYPE_WHITESPACE, "", 0
-        while token[0] == TYPE_WHITESPACE:
+        token = "", TYPE_WHITESPACE, 0
+        while token[1] == TYPE_WHITESPACE:
             if self.currPos == len(self.currLine):
                 self.currLine = self.file.readline()
                 self.currPos = 0
@@ -87,11 +87,11 @@ class StringTokenizer(Tokenizer):
 
     Last uncomplete token can be acceessed via `uncompleteToken` attribute.
     """
-    def __init__(self, text = None, onlyComplete = False):
+    def __init__(self, text=None, onlyComplete=False):
         super().__init__()
         self.reset(text, onlyComplete)
 
-    def reset(self, text = None, onlyComplete = False):
+    def reset(self, text=None, onlyComplete=False):
         """Used to recycle tokenizer object with new input."""
         self.text = text if text else ""
         self.position = 0
@@ -118,7 +118,7 @@ class StringTokenizer(Tokenizer):
 class SentenceTokenizer:
     """
     Divide given sequence of tokens into sequence of lists, each representing
-    one (unfinished) sentence. Finished sentence are appended an end sentence
+    one (unfinished) sentence. Finished sentences are appended an end sentence
     token.
 
     Also performs true-casing.
@@ -127,30 +127,41 @@ class SentenceTokenizer:
     delimiters) and lowercases first token in a sentence.
     """
 
-    sentenceDelimiters = {".", "!", "?"}
+    
 
-    def __init__(self, tokens = None):
+    def __init__(
+                 self,
+                 tokens=None,
+                 sentenceDelimiters=set([".", "!", "?", ":", "..."]),
+                 abbreviations=set()
+                 ):
         self.reset(tokens)
+        self._sentenceDelimiters = sentenceDelimiters
+        self._abbreviations = abbreviations
 
-    def reset(self, tokens = None):
+    def reset(self, tokens=None):
         self.tokens = tokens if tokens else []
 
     def __iter__(self):
         result = []
-        endOfSentence = True
+        endOfSentence = False
 
         for t in self.tokens:
-            if endOfSentence:
-                t = t[0].lower(), t[1], t[2]
-                endOfSentence = False
-
-            result.append(t)
-            if t[0] in self.sentenceDelimiters:
+            if endOfSentence and t[1] != TYPE_DELIMITER:
                 yield result + [(TOKEN_END_SENTENCE, TYPE_SENTENCE_END, t[2])]
                 result = []
-                endOfSentence = True
+                t = t[0].lower(), t[1], t[2]
+                endOfSentence = False                
+
+            if t[0] in self._sentenceDelimiters:
+                if len(result) > 0 and result[-1][0] not in self._abbreviations:
+                    endOfSentence = True
+
+            result.append(t)
                 
-                
+
+        if endOfSentence:
+            result.append((TOKEN_END_SENTENCE, TYPE_SENTENCE_END, t[2]))
         yield result
 
 

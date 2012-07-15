@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 import sys
+
+import argparse
 import os
 
 if __name__ == "__main__":
@@ -36,7 +38,7 @@ class TokenNormalizer:
 
 
 
-def formatFile(fin, fout):
+def formatFile(fin, fout, abbreviations=set()):
     """
     Collapse whitespace to single space and split text into sentences.
 
@@ -46,7 +48,7 @@ def formatFile(fin, fout):
     """
     cntSentences = 0
     tft = common.Tokenize.TextFileTokenizer(fin)
-    sent = common.Tokenize.SentenceTokenizer(tft)
+    sent = common.Tokenize.SentenceTokenizer(tft, abbreviations = abbreviations)
     filter = TokenNormalizer(sent)
     cntSentences = 0
     for sentence in filter:
@@ -56,17 +58,27 @@ def formatFile(fin, fout):
     return cntSentences
 
 
-# -- Parse command line options and arguments --
-if len(sys.argv) < 2:
-    print("Usage: format.py file(s) ...")
-    sys.exit(1)
+def main():
+    parser = argparse.ArgumentParser(description="Format text files using own tokenization, one sentence per line, tokens separated by a space.")
+    parser.add_argument("-a", help="abbreviations file, one per line", type=argparse.FileType('r'))
+    parser.add_argument("file", help="text file", type=argparse.FileType('r'), nargs='+')
+    args = parser.parse_args()
 
-files = sys.argv[1:]
+    abbreviations = set()
+    if args.a:
+        abbreviations = set(w.strip() for w in args.a.readlines())
+        args.a.close()
 
-for filename in files:
-    fin = open(filename)
-    fout = open(filename + ".sentences", "w")
-    sentences = formatFile(fin, fout)
-    print("File '{}' contains {} sentences.".format(filename, sentences))
-    fin.close()
-    fout.close()
+    for fin in args.file:
+        fout = open(fin.name + ".sentences", "w")
+        sentences = formatFile(fin, fout, abbreviations)
+        print("File '{}' contains {} sentences.".format(fin.name, sentences))
+        fin.close()
+        fout.close()
+    
+
+if __name__ == '__main__':
+    main()
+
+
+
