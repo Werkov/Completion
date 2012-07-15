@@ -168,7 +168,7 @@ ARPASelector::Unigrams ARPASelector::unigramSuggestions(const std::string& prefi
     Unigrams::const_iterator beg = end;
     while(beg >= unigrams_.begin() && accessor(beg) == prefix) --beg;
     if(beg < end) {
-        result.insert(result.end(), beg + 1, end);
+        result.insert(result.end(), beg + 1, end + 1);
     }
 
     return result;
@@ -198,8 +198,8 @@ ARPASelector::Unigrams ARPASelector::bigramSuggestions(const std::string& prefix
     Bigrams::const_iterator end = util::BinaryBelow(accessor, bigrams_.begin() + bBegin, bigrams_.begin() + bEnd, prefix);
 
     Bigrams::const_iterator beg = end;
-    while(beg >= bigrams_.begin() && accessor(beg) == prefix) --beg;
-    for(Bigrams::const_iterator it = beg + 1; it < end; ++it) {
+    while(beg >= bigrams_.begin() + bBegin && accessor(beg) == prefix) --beg;
+    for(Bigrams::const_iterator it = beg + 1; it <= end; ++it) {
         result.push_back(unigrams_[*it]);
     }
 
