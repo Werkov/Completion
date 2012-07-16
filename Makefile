@@ -1,18 +1,20 @@
-# Ubuntu
-#  certainly needs packages: python3, python3-sip, python3-sip-dev
-#
+SIMPLE_MAKES=libs/kenlm src/cpp/kenlm-wrapper src/cpp/ARPA-selector
+SIP_MAKES=src/sip/kenlm-bindings src/sip/selector-bindings
 
-wrapper_dir=src/utils/kenlm-wrapper
+.PHONY: $(SIMPLE_MAKES) $(SIP_MAKES)
 
-all: kenlm wrapper
-	cd $(wrapper_dir) ; python3 -i kenlm.test.py
+all: $(SIMPLE_MAKES) $(SIP_MAKES)
 
-kenlm:
-	make -C libs/kenlm
+$(SIMPLE_MAKES):
+	make -C $@
 
-wrapper:
-	make -C $(wrapper_dir) -f Makefile
-	cd $(wrapper_dir) ; python3 configure.py
-	make -C $(wrapper_dir) -f Makefile.generated
+$(SIP_MAKES):
+	(cd $@; ./configure.py)
+	make -C $@
+	make -C $@ install
 
+src/cpp/kenlm-wrapper: libs/kenlm
+src/cpp/ARPA-selector: libs/kenlm
+src/sip/kenlm-bindings: src/cpp/kenlm-wrapper
+src/sip/selector-bindings: src/cpp/ARPA-selector
 
