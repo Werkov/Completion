@@ -3,10 +3,10 @@
 	url = git@github.com:Werkov/Completion.wiki.git
 [submodule "libs/kenlm"]
 	path = libs/kenlm
-	url = http://upload.later/to/public
+	url = git@github.com:Werkov/KenLM.git
 [submodule "libs/pyqt4"]
 	path = libs/pyqt4
-	url = http://upload.later/to/public
+	url = git@github.com:Werkov/PyQt4.git
 [submodule "libs/sip4"]
 	path = libs/sip4
-	url = http://upload.later/to/public
+	url = git@github.com:Werkov/SIP.git
