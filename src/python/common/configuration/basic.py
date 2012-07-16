@@ -1,10 +1,12 @@
 __all__ = [
+    'Bigram',
     'Simple',
-    'Extended'
+    'Uniform'
 ]
 
-import common.Tokenize
 from common.configuration import Configuration as Configuration
+from common import pathFinder
+import common.Tokenize
 import lm.Selection
 from lm.kenlm import Model as KenLMModel
 import ui.Completion
@@ -42,7 +44,7 @@ class Simple(Configuration):
         return contextHandler
 
     def _createLanguageModel(self):        
-        return KenLMModel(self._params['lm'])
+        return KenLMModel(pathFinder(self._params['lm']))
 
     # suggestions filters
     def _createAddedCharsFilter(self):
@@ -83,9 +85,9 @@ class Uniform(Simple):
 
 
     def _createSelector(self):
-        return lm.Selection.UniformSelector(KenLMModel(self._params['voc']).vocabulary())
+        return lm.Selection.UniformSelector(KenLMModel(pathFinder(self._params['voc'])).vocabulary())
     def _createLanguageModel(self):
-        return KenLMModel(self._params['lm'])
+        return KenLMModel(pathFinder(self._params['lm']))
 
 class Bigram(Simple):
     description = """KenLM for probability evaluation and bigram selector based
@@ -98,7 +100,7 @@ class Bigram(Simple):
 
 
     def _createSelector(self):
-        return lm.Selection.BigramSelector(self._params['sel'], self.contextHandler)
+        return lm.Selection.BigramSelector(pathFinder(self._params['sel']), self.contextHandler)
     def _createLanguageModel(self):
-        return KenLMModel(self._params['lm'], False)
+        return KenLMModel(pathFinder(self._params['lm']), False)
 

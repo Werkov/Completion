@@ -1,3 +1,17 @@
+import os.path
+import os
+
+def pathFinder(path, pathVar="LMPATH"):
+    """Find given name in paths specified by given environment variable.
+    Return original path when any path doesn't exist."""
+    candidates = os.environ[pathVar].split(os.pathsep) if pathVar in os.environ else []
+    candidates = [''] + candidates
+    for prePath in candidates:
+        fullPath = os.path.expanduser(os.path.join(prePath, path))
+        if os.path.exists(fullPath):
+            return fullPath
+    return path
+
 class TrieNode:
     """Unused"""    
     def __init__(self, data=None, parent=None):
@@ -63,7 +77,7 @@ class Trie:
         node = self._findNode(key)
         if not node:
             raise KeyError(key)
-        result=[]
+        result = []
         for n in node[1]:
             if node[1][n][0] != None:
                 result.append(key + n)
