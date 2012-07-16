@@ -150,13 +150,14 @@ class SentenceTokenizer:
             if endOfSentence and t[1] != TYPE_DELIMITER:
                 yield result + [(TOKEN_END_SENTENCE, TYPE_SENTENCE_END, t[2])]
                 result = []
-                t = t[0].lower(), t[1], t[2]
                 endOfSentence = False                
 
             if t[0] in self._sentenceDelimiters:
                 if len(result) > 0 and result[-1][0] not in self._abbreviations:
                     endOfSentence = True
-
+            if len(result) == 0:
+                t = t[0].lower(), t[1], t[2]
+                
             result.append(t)
                 
 

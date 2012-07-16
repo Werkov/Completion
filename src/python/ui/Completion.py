@@ -73,6 +73,14 @@ class ContextHandler:
         for listener in self._listeners:
             listener.shift(token)
 
+    def reset(self):
+        self.context = []
+        self.prefix = ""
+
+    def shift(self, token):
+        self.context.append(token)
+        self._shift(token)
+
 class TextEdit(QtGui.QPlainTextEdit):
     """
     UI text component with text completion feature.

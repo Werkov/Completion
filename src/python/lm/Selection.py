@@ -90,6 +90,7 @@ class BigramSelector(lm.arpaselector.ARPASelector):
             and (self._contextHandler.context[-1] == common.Tokenize.TOKEN_BEG_SENTENCE \
                  or self._contextHandler.context[-1] == common.Tokenize.TOKEN_END_SENTENCE):
             prefix = prefix[0].lower() + prefix[1:]
+
         if len(prefix) > 3:
             l = self.unigramSuggestions(prefix)
         else:

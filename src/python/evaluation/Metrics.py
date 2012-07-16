@@ -1,92 +1,144 @@
-# TODO implement API for trigger based model also here
-#      possibly accept whole Configuration object
+import common.Tokenize
 
-class EntropyMetric:
+class Metric:
+    """Metric class has its own state. It could be changed by `measure` method
+    that's called for every input token. Metric results (tuple for given state)
+    are returned by `result` method. `reset` will put metric into initial state.
+    
+    IMPORTANT: Metric must not change the state of used objects.
+    """
+    name = "tokens"
+    
+    def __init__(self, config):
+        self._config = config
+        self.reset()
+
+    def reset(self):
+        self._n = 0
+
+    def measure(self, token):
+        self._n += 1
+    
+    def result(self):
+        return self._n,
+
+    def _suggestions(self, prefix = ""):
+        ll = self._config.selector.suggestions(prefix)
+        for filter in self._config.filterChain:
+            ll = filter(ll)
+        return list(ll)
+
+
+
+class PerplexityMetric(Metric):
     """Cross entropy per (word) token for model on given text."""
-    def __init__(self, languageModel, contextLength):
-        self.languageModel  = languageModel
-        self.entropy        = 0
-        self.tokenCnt       = 0
-        self.contextLength  = contextLength
 
-    def measure(self, history, token):
-        context = history[-self.contextLength:]
-        prob = self.languageModel.probability(context, token)
-        self.entropy  += -prob
-        self.tokenCnt += 1
+    name = "pplxity"
+
+    def reset(self):
+        super().reset()
+        self._entropy = 0
+
+    def measure(self, token):
+        super().measure(token)
+        if token == common.Tokenize.TOKEN_BEG_SENTENCE:
+            return
+        prob = self._config.languageModel.probability(token, False)
+    
+        self._entropy  += -prob    
 
     def result(self):
-        entropyPerToken = self.entropy / self.tokenCnt
-        return 2 ** entropyPerToken
+        return int(2 ** (self._entropy / self._n)),
 
-class QwertyMetric:
+class QwertyMetric(Metric):
     """Emulates optimal typing on classical keyboard (full QWERTY-like layout).
-    Neglects congition load caused by selections list. As metrics get only tokens
-    from the text, suppose that they're separated with single space.
-    TODO Partial suggestions support."""
-    
-    def __init__(self, selector, sorter, filter, contextLength):
-        self.selector       = selector
-        self.sorter         = sorter
-        self.filter         = filter
-        self.contextLength  = contextLength
-        self.tokenCnt       = 0
-        self.charCnt        = 0
-        self.keystrokeCnt   = 0
+    Neglects cognition load caused by selections list. As metrics get only tokens
+    from the text, suppose that they're separated with single space."""
 
-    def measure(self, history, token):
-        context = history[-self.contextLength:]
+    name = "QWERTY"
+
+    def reset(self):
+        super().reset()
+        self._charCnt        = 0
+        self._keystrokeCnt   = 0
+
+    def measure(self, token):
+        super().measure(token)
+        if token in [common.Tokenize.TOKEN_BEG_SENTENCE, common.Tokenize.TOKEN_END_SENTENCE]:
+            return
         keystrokes = 0 # per token
         prefix = ""
-        for c in token:
-            rawSuggestions = self.sorter.getSortedSuggestions(context, self.selector.getSuggestions(context, prefix))
-            suggestions = [(suggestion, probability, False) for suggestion, probability in rawSuggestions]
-            if self.filter != None:
-                suggestions = self.filter.filter(suggestions, prefix)
 
-            suggestionsOnly = [suggestion for suggestion, _, _ in suggestions]
-            # TODO partial tokens!
-            if token in suggestionsOnly:
-                autoComplete = 1 if suggestions.index(token) == 1 else suggestions.index(token) + 1 # use fast accept for first position
-                typeManually = len(token) - len(prefix) + 1 # write remaining chars + space
+        for c in token:
+            ll = self._suggestions(prefix)
+
+            completeSuggestions = [s for s, _, partial in ll if not partial]
+            partialSuggestions  = [s for s, _, partial in ll if partial]
+            allSuggestions      = [s for s, _, _ in ll]
+
+            
+            if token in completeSuggestions:
+                # +1 use fast accept || +n down arrow +1 enter
+                autoComplete = 1 if allSuggestions.index(token) == 1 else allSuggestions.index(token) + 1
+                # write remaining chars + space
+                typeManually = len(token) - len(prefix) + 1
+                # what is better
                 keystrokes += min(autoComplete, typeManually)
                 break
+            elif token in partialSuggestions:
+                # +1 use fast accept || +n down arrow +1 enter
+                autoComplete = 1 if allSuggestions.index(token) == 1 else allSuggestions.index(token) + 1
+                # write remaining chars
+                typeManually = len(token) - len(prefix) + 1
+                # what is better
+                keystrokes += min(autoComplete, typeManually)
+                prefix = token
+                continue
             else: # manual typing
                 keystrokes += 1
             prefix += c
-        else:
+        else: # for
             keystrokes += 1 # separating space for manual typing
 
-        self.charCnt += len(token) + 1 # with separating space
-        self.keystrokeCnt += keystrokes
-        self.tokenCnt += 1
+        self._charCnt += len(token) + 1 # with separating space
+        self._keystrokeCnt += keystrokes
+
 
     def result(self):
-        return self.keystrokeCnt / self.charCnt
+        return self._keystrokeCnt / self._charCnt,
 
 class BikeyboardMetric:
     pass
 
-class SuggesitionsMetric:
-    """Measure of selector effeciency. Suggestions are evaluated by their position. Missing suggestions are penalised."""
-    missingPenalty = 1000
+class SelectorMetric(Metric):
+    """Measure of selector effeciency.
+    Count hits of selector w/out any given prefix.Suggestions are evaluated by their position. Missing suggestions are penalised."""
 
-    def __init__(self, selector, sorter, contextLength):
-        self.selector       = selector
-        self.sorter         = sorter
-        self.contextLength  = contextLength
-        self.tokenCnt       = 0
-        self.aggOrder       = 0
-    
-    def measure(self, history, token):
-        context = history[-self.contextLength:]
-        suggestions = [suggestion for suggestion, _ in self.sorter.getSortedSuggestions(context, self.selector.getSuggestions(context))]
-        if token in suggestions:
-            self.aggOrder += suggestions.index(token)
-        else:
-            self.aggOrder += self.missingPenalty
-        self.tokenCnt += 1
+    name = "selector"
+    N    = 1
+
+    def reset(self):
+        super().reset()
+        self._sumOrder      = 0
+        self._hitCnt        = [0, 0]
+
+    def measure(self, token):
+        super().measure(token)
+        if token in [common.Tokenize.TOKEN_BEG_SENTENCE, common.Tokenize.TOKEN_END_SENTENCE]:
+            return
+
+        sugg = [w for w, _, _ in self._suggestions()]
+        if token in sugg[:self.N]:
+            self._hitCnt[0] += 1
+            self._hitCnt[1] += 1
+        elif len(token) > 1:
+            sugg = [w for w, _, _ in self._suggestions(token[0])]
+            if token in sugg[:self.N]:
+                self._hitCnt[1] += 1
+#        else:
+#            self._sumOrder += self.missingPenalty
+
 
     def result(self):
-        return self.aggOrder / self.tokenCnt
+        return self._hitCnt[0] / self._n, self._hitCnt[1] / self._n# if self._hitCnt > 0 else None
 

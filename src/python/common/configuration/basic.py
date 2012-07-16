@@ -16,7 +16,7 @@ class Simple(Configuration):
     aliases     = ['s']
 
     def configureArgParser(parser):
-        parser.add_argument('-lm', help='path to KenLM model file', required=True)
+        parser.add_argument('-lm', help='path to ARPA file', required=True)
     
 
     def _initialize(self):
@@ -66,17 +66,20 @@ class Simple(Configuration):
     def _createStringTokenizer(self):
         return common.Tokenize.StringTokenizer()
 
+    def _createTextFileTokenizerClass(self):
+        return common.Tokenize.TextFileTokenizer
+
     def _createSentenceTokenizer(self):
         return common.Tokenize.SentenceTokenizer()
 
-class Extended(Simple):
+class Uniform(Simple):
     description = """KenLM for probability evaluation and another's KenLM vocabulary for
         uniform selector."""
-    aliases     = ['e']
+    aliases     = ['u']
 
     def configureArgParser(parser):
-        parser.add_argument('-lm', help='path to probability KenLM model file', required=True)
-        parser.add_argument('-voc', help='path to vocabulary KenLM file', required=True)
+        parser.add_argument('-lm', help='path to probability ARPA file', required=True)
+        parser.add_argument('-voc', help='path to vocabulary ARPA file', required=True)
 
 
     def _createSelector(self):
@@ -90,7 +93,7 @@ class Bigram(Simple):
     aliases     = ['b']
 
     def configureArgParser(parser):
-        parser.add_argument('-lm', help='path to probability KenLM model file', required=True)
+        parser.add_argument('-lm', help='path to probability ARPA file', required=True)
         parser.add_argument('-sel', help='path to selector ARPA file', required=True)
 
 
