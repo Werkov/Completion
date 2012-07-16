@@ -1,4 +1,4 @@
-SIMPLE_MAKES=libs/kenlm src/cpp/kenlm-wrapper src/cpp/ARPA-selector
+SIMPLE_MAKES=libs/kenlm src/cpp/kenlm-wrapper src/cpp/ARPA-selector sample-data
 SIP_MAKES=src/sip/kenlm-bindings src/sip/selector-bindings
 
 .PHONY: $(SIMPLE_MAKES) $(SIP_MAKES)
@@ -13,8 +13,16 @@ $(SIP_MAKES):
 	make -C $@
 	make -C $@ install
 
+#
+# -- dependencies --
+#
+# both use KenLM
 src/cpp/kenlm-wrapper: libs/kenlm
 src/cpp/ARPA-selector: libs/kenlm
+
+# bindings needs C++ objects
 src/sip/kenlm-bindings: src/cpp/kenlm-wrapper
 src/sip/selector-bindings: src/cpp/ARPA-selector
 
+# building binaries
+sample-data: libs/kenlm src/cpp/ARPA-selector

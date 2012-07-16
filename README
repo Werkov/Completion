@@ -1,4 +1,4 @@
-Individual software project
+Completion project
 ===========================
 
 Uses language models to predict what user is about to write.
@@ -9,17 +9,37 @@ It can be used:
 
 Dependecies
 -----------
-Needs Python3, PyQt4 for Python3, (ICU library) and SIP framework.
+Needs Python3, PyQt4 for Python3, and SIP framework.
 Partially it could be installed from these Ubuntu packages:
 	- python3-sip 
 	- python3-sip-dev
+It's also recommended to have some NLP toolkit installed to
+create ARPA files.
 
 Alas, current Ubuntu repositories don't contain PyQt4 for Python3, therefore
 they must be installed manually:
 	- download from:
 		- http://www.riverbankcomputing.co.uk/software/sip/download
 		- http://www.riverbankcomputing.co.uk/software/pyqt/download
+	- or download appropriate version as Git submodule
 	- run (first SIP, then PyQt4):
 		- python3 configure.py
 		- make
 		- sudo make install
+
+
+Demo
+----
+(FIX: `chmod u+x Change src/sip/*/configure.py`, NTFS, Git and persmissions don't work well)
+First run `make` in the root directory, it should:
+	- compile KenLM objects,
+	- compile KenLM wrapper and ARPA selector objects,
+	- compile executables for building binary files from ARPA
+	  for KenLM and ARPA selector,
+	- generate SIP bindings sources and compile them to .so
+	  Python modules,
+	- create binary files for sample language model.
+
+If everything works properly demo could be started by
+`./src/python/ui-demo.py b -lm sample-data/povidky.bin -sel sample-data/povidky.sel.bin`.
+
