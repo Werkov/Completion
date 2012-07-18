@@ -90,7 +90,7 @@ class SuggestionsLimiter:
     Limit the number of suggestions by the minimal (log 2) probability and
     maximal count. This should reduce the cognitive load.
     """
-    def __init__(self, minProbability = -10, maxCount = 10):
+    def __init__(self, minProbability = -16, maxCount = 10):
         self._minProbability = minProbability
         self._maxCount = maxCount
 

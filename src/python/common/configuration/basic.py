@@ -1,8 +1,4 @@
-__all__ = [
-    'Bigram',
-    'Simple',
-    'Uniform'
-]
+import argparse
 
 from common import pathFinder
 import common.Tokenize
@@ -14,13 +10,15 @@ import ui.Completion
 import ui.Filter
 
 
-class Simple(Configuration):
-    description = """KenLM for probability evaluation and its vocabulary for uniform selector."""
-    aliases     = ['s']
 
+class Basic(Configuration):
+    description = """Stupid configuration."""
+    aliases     = []
+
+    @staticmethod
     def configureArgParser(parser):
-        parser.add_argument('-lm', help='path to ARPA file', required=True)
-    
+        parser.add_argument('-abbr', help='path to abbreviatrons file')
+
 
     def _initialize(self):
         # add listeners separately from creation to avoid cycles
@@ -36,16 +34,16 @@ class Simple(Configuration):
             self.limitFilter,
             self.capitalizeFilter
         ]
-    
+
     def _createSelector(self):
-        return lm.Selection.UniformSelector(languageModel=self.languageModel)
+        return lm.Selector()
 
     def _createContextHandler(self):
-        contextHandler = ui.Completion.ContextHandler(self.stringTokenizer, self.sentenceTokenizer)        
+        contextHandler = ui.Completion.ContextHandler(self.stringTokenizer, self.sentenceTokenizer)
         return contextHandler
 
     def _createLanguageModel(self):
-        return KenLMModel(pathFinder(self._params['lm']))
+        return lm.LangModel()
 
     # suggestions filters
     def _createAddedCharsFilter(self):
@@ -58,7 +56,7 @@ class Simple(Configuration):
         return ui.Filter.ProbabilityEstimator(self.languageModel)
 
     def _createLimitFilter(self):
-        return ui.Filter.SuggestionsLimiter(-20)
+        return ui.Filter.SuggestionsLimiter()
 
     def _createSortFilter(self):
         def sortFilter(suggestions):
@@ -73,7 +71,28 @@ class Simple(Configuration):
         return common.Tokenize.TextFileTokenizer
 
     def _createSentenceTokenizer(self):
-        return common.Tokenize.SentenceTokenizer()
+        if 'abbr' in self._params:
+            abbr = open(pathFinder(self._params['abbr']), 'r')
+            abbreviations = [l.strip() for l in abbr.readlines()]
+            abbr.close()
+        else:
+            abbreviations = []
+        return common.Tokenize.SentenceTokenizer(abbreviations=abbreviations)
+
+class Simple(Basic):
+    description = """KenLM for probability evaluation and its vocabulary for uniform selector."""
+    aliases     = ['s']
+
+    def configureArgParser(parser):
+        Basic.configureArgParser(parser)
+        parser.add_argument('-lm', help='path to ARPA file', required=True)
+
+
+    def _createSelector(self):
+        return lm.Selection.UniformSelector(languageModel=self.languageModel)
+
+    def _createLanguageModel(self):
+        return KenLMModel(pathFinder(self._params['lm']))
 
 class Uniform(Simple):
     description = """KenLM for probability evaluation and another's KenLM vocabulary for
@@ -81,6 +100,7 @@ class Uniform(Simple):
     aliases     = ['u']
 
     def configureArgParser(parser):
+        Basic.configureArgParser(parser)
         parser.add_argument('-lm', help='path to probability ARPA file', required=True)
         parser.add_argument('-voc', help='path to vocabulary ARPA file', required=True)
 
@@ -96,6 +116,7 @@ class Bigram(Simple):
     aliases     = ['b']
 
     def configureArgParser(parser):
+        Basic.configureArgParser(parser)
         parser.add_argument('-lm', help='path to probability ARPA file', required=True)
         parser.add_argument('-sel', help='path to selector ARPA file', required=True)
 
