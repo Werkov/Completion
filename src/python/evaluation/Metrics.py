@@ -15,9 +15,11 @@ class Metric:
 
     def reset(self):
         self._n = 0
+        self._c = 0
 
     def measure(self, token):
         self._n += 1
+        self._c += len(token) + 1
     
     def result(self):
         return self._n,
@@ -41,14 +43,11 @@ class PerplexityMetric(Metric):
 
     def measure(self, token):
         super().measure(token)
-        if token == common.Tokenize.TOKEN_BEG_SENTENCE:
-            return
         prob = self._config.languageModel.probability(token, False)
-    
         self._entropy  += -prob    
 
     def result(self):
-        return int(2 ** (self._entropy / self._n)),
+        return 2 ** (self._entropy / self._n),
 
 class QwertyMetric(Metric):
     """Emulates optimal typing on classical keyboard (full QWERTY-like layout).
@@ -64,7 +63,7 @@ class QwertyMetric(Metric):
 
     def measure(self, token):
         super().measure(token)
-        if token in [common.Tokenize.TOKEN_BEG_SENTENCE, common.Tokenize.TOKEN_END_SENTENCE]:
+        if token in [common.Tokenize.TOKEN_END_SENTENCE]:
             return
         keystrokes = 0 # per token
         prefix = ""
@@ -121,24 +120,27 @@ class SelectorMetric(Metric):
         super().reset()
         self._sumOrder      = 0
         self._hitCnt        = [0, 0]
+        self._saved         = 0
 
     def measure(self, token):
         super().measure(token)
-        if token in [common.Tokenize.TOKEN_BEG_SENTENCE, common.Tokenize.TOKEN_END_SENTENCE]:
+        if token in [common.Tokenize.TOKEN_END_SENTENCE]:
             return
 
         sugg = [w for w, _, _ in self._suggestions()]
         if token in sugg[:self.N]:
             self._hitCnt[0] += 1
             self._hitCnt[1] += 1
+            self._saved     += len(token)
         elif len(token) > 1:
             sugg = [w for w, _, _ in self._suggestions(token[0])]
             if token in sugg[:self.N]:
                 self._hitCnt[1] += 1
+                self._saved     += len(token) - 1
 #        else:
 #            self._sumOrder += self.missingPenalty
 
 
     def result(self):
-        return self._hitCnt[0] / self._n, self._hitCnt[1] / self._n# if self._hitCnt > 0 else None
+        return self._hitCnt[0] / self._n, self._hitCnt[1] / self._n, 1 - (self._saved / self._c)# if self._hitCnt > 0 else None
 

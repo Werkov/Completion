@@ -13,8 +13,7 @@ class LangModel:
         pass
 
     def probability(self, token, changeContext=True):
-        """
-        Return log2 probability of word in model's current state.
+        """Return log2 probability of word in model's current state.
         Word is used to change the state of model unless specified changeState = False.
 
         For unknown words -100 is returned.
@@ -22,10 +21,26 @@ class LangModel:
         return -100
 
     def shift(self, token):
-        """
-        Change model's current state with given token.
+        """Change model's current state with the given token.
         """
         self.probability(token, True)
 
+
+class Selector:
+    """According to the current context returns candidates for possible
+    continuation of the text.
+    """
+
+    def reset(self):
+        """Set initial context."""
+        pass
+
+    def shift(self, token):
+        """Change context with the given token."""
+        pass
+
+    def suggestions(self, prefix):
+        """Suggestions for current context, filtered by the prefix."""
+        return []
 
 

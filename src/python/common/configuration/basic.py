@@ -4,9 +4,10 @@ __all__ = [
     'Uniform'
 ]
 
-from common.configuration import Configuration as Configuration
 from common import pathFinder
 import common.Tokenize
+from common.configuration import Configuration as Configuration
+import lm.Model
 import lm.Selection
 from lm.kenlm import Model as KenLMModel
 import ui.Completion
@@ -22,7 +23,7 @@ class Simple(Configuration):
     
 
     def _initialize(self):
-        # add listeners separately from creation to aviod cycles
+        # add listeners separately from creation to avoid cycles
         contextHandler = self.contextHandler
         contextHandler.addListener(self.selector)
         contextHandler.addListener(self.languageModel)
@@ -37,13 +38,13 @@ class Simple(Configuration):
         ]
     
     def _createSelector(self):
-        return lm.Selection.UniformSelector(self.languageModel.vocabulary())
+        return lm.Selection.UniformSelector(languageModel=self.languageModel)
 
     def _createContextHandler(self):
         contextHandler = ui.Completion.ContextHandler(self.stringTokenizer, self.sentenceTokenizer)        
         return contextHandler
 
-    def _createLanguageModel(self):        
+    def _createLanguageModel(self):
         return KenLMModel(pathFinder(self._params['lm']))
 
     # suggestions filters
@@ -103,4 +104,26 @@ class Bigram(Simple):
         return lm.Selection.BigramSelector(pathFinder(self._params['sel']), self.contextHandler)
     def _createLanguageModel(self):
         return KenLMModel(pathFinder(self._params['lm']), False)
+
+
+class BigramCached(Bigram):
+    description = """KenLM for probability evaluation and bigram selector based
+    on ARPA file + cache."""
+    aliases     = ['bc']
+
+
+    def _createSelector(self):
+        multi = lm.Selection.MultiSelector()
+        multi.addSelector(lm.Selection.BigramSelector(pathFinder(self._params['sel']), self.contextHandler))
+        multi.addSelector(lm.Selection.UniformSelector(languageModel=self.cachedModel))
+        return multi
+    
+    def _createLanguageModel(self):
+        lin = lm.Model.LInterpolatedModel()
+        lin.addModel(KenLMModel(pathFinder(self._params['lm']), False), 0.93)
+        lin.addModel(self.cachedModel, 0.07)
+        return lin
+    
+    def _createCachedModel(self):
+        return lm.Model.CachedModel()
 

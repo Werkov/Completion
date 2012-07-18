@@ -1,3 +1,4 @@
+import common.Tokenize
 import ui
 
 class AutomatedTest:
@@ -17,13 +18,14 @@ class AutomatedTest:
         tokens = ui.TokenNormalizer(sentences)
 
         for token in tokens:
-            for metric in self.metrics:
-                metric.measure(token)
+            if token != common.Tokenize.TOKEN_BEG_SENTENCE:
+                for metric in self.metrics:
+                    metric.measure(token)
             self._config.contextHandler.shift(token)
             
 
     def result(self):        
-        print("\t".join(['#' + ' '*(len(self._file.name)-1)] + [str(m.name) for m in self.metrics]))
+        print("\t\t".join(['#' + ' '*(len(self._file.name)-1)] + [str(m.name) for m in self.metrics]))
         row = []
         for m in self.metrics:
             results = []
@@ -34,4 +36,4 @@ class AutomatedTest:
                     results.append(str(r))
             row.append(' '.join(results))
             
-        print("\t".join([self._file.name] + row))
+        print("\t\t".join([self._file.name] + row))
