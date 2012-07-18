@@ -1,3 +1,4 @@
+import common.Tokenize
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from ui import TokenNormalizer
@@ -34,7 +35,7 @@ class ContextHandler:
 
     Listeners must have `shift(token)` and `reset()` methods.
     """
-    def __init__(self, tokenizer, sentencer, normalizer = None):
+    def __init__(self, tokenizer, sentencer, normalizer=None):
         self.context = []
         self.prefix = ""
         self._tokenizer = tokenizer
@@ -55,12 +56,15 @@ class ContextHandler:
         tokens = list(self._normalizer)
         self.prefix = self._tokenizer.uncompleteToken[0] if self._tokenizer.uncompleteToken else ""
 
-        if len(tokens) < len(self.context):
+        if len(tokens) < len(self.context) or tokens[:len(self.context)] != self.context:
             print("reseting whole model")
             self._reset()
             self.context = []
 
         newTokens = tokens[len(self.context):]
+        if newTokens and newTokens[-1] == common.Tokenize.TOKEN_END_SENTENCE:
+            newTokens.append(common.Tokenize.TOKEN_BEG_SENTENCE)
+
         for token in newTokens:
             self._shift(token)
         self.context += newTokens
@@ -108,7 +112,7 @@ class TextEdit(QtGui.QPlainTextEdit):
     Role_Partial = Role_Data + 2
 
     acceptBasicSet = ",.:;\"'?!"
-    consumeSpaceSet = ",.:;?!" # characters that usually don't follow whitespace
+    consumeSpaceSet = ",.:;?!)“" # characters that usually don't follow whitespace
 
 
     def __init__(self, parent=None):
@@ -120,7 +124,6 @@ class TextEdit(QtGui.QPlainTextEdit):
         self._initPopup()
                
         self.cursorPositionChanged.connect(self._cursorPositionChangedHandler)
-        self.textChanged.connect(self._textChangedHandler)
         self.cursorMoveReason   = self.UserReason
         self.lastSpaceReason    = self.UserReason
         
@@ -174,9 +177,6 @@ class TextEdit(QtGui.QPlainTextEdit):
             self.setPopupState(self.Popup_Hidden)
         self.cursorMoveReason = self.UserReason
 
-    def _textChangedHandler(self):
-        pass # update tokens?
-
 
     def _popupItemClickedHandler(self, item):
         self._acceptSuggestion(None)
@@ -207,7 +207,7 @@ class TextEdit(QtGui.QPlainTextEdit):
             if event.key() == QtCore.Qt.Key_Space and event.modifiers() & QtCore.Qt.ControlModifier:
                 self.setPopupState(self.Popup_Visible)
                 handled = True
-            elif event.text() != "":
+            elif event.text() != "" and event.text().isprintable():
                 self.cursorMoveReason = self.InnerReason
                 self._handleKeyPress(event)
                 handled = True
@@ -287,11 +287,14 @@ class TextEdit(QtGui.QPlainTextEdit):
 
 
     def _handleKeyPress(self, event):
+        consumed = False
         if event.text() != "" and event.text() in self.consumeSpaceSet:
-            self._consumeLastSpace()
+            consumed = self._consumeLastSpace()
         else:
             self.lastSpaceReason = self.UserReason
         QtGui.QPlainTextEdit.keyPressEvent(self, event)
+        if consumed:
+            self._appendSpace()
 
     def _isAcceptKey(self, keyEvent):
         return keyEvent.key() in [QtCore.Qt.Key_Tab, QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return, QtCore.Qt.Key_Space] \
@@ -306,6 +309,7 @@ class TextEdit(QtGui.QPlainTextEdit):
         if not chosenItem:
             return None
         prefix = self._prefix()
+        suggestion = chosenItem.data(self.Role_Data)
         
         if chosenItem.data(self.Role_Partial):
             appendix = ""
@@ -323,20 +327,33 @@ class TextEdit(QtGui.QPlainTextEdit):
         else:
             appendix = " "
             self.lastSpaceReason = self.InnerReason
-        
+
+        if suggestion in self.consumeSpaceSet:
+            self._consumeLastSpace()
+
+            
         tc = self.textCursor()
         tc.movePosition(QtGui.QTextCursor.Left, QtGui.QTextCursor.KeepAnchor, len(prefix))
-        tc.insertText(chosenItem.data(self.Role_Data) + appendix)
+        tc.insertText(suggestion + appendix)
         self.cursorMoveReason = self.InnerReason
         self.setTextCursor(tc)
 
     def _consumeLastSpace(self):
         if self.lastSpaceReason != self.InnerReason:
-            return
+            return False
         
         tc = self.textCursor()
         tc.movePosition(QtGui.QTextCursor.Left, QtGui.QTextCursor.KeepAnchor, 1)
         tc.removeSelectedText()
+        self.cursorMoveReason = self.InnerReason
+        self.setTextCursor(tc)
+        return True
+
+    def _appendSpace(self):
+        self.lastSpaceReason = self.InnerReason
+
+        tc = self.textCursor()
+        tc.insertText(" ")
         self.cursorMoveReason = self.InnerReason
         self.setTextCursor(tc)
 
