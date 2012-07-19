@@ -1,8 +1,10 @@
+import ui.Completion
 import math
 import itertools
 
 from common import Trie
 import common.Tokenize
+import ui
 
 
 class EndingAggegator:
@@ -76,14 +78,15 @@ class ProbabilityEstimator:
 
     Language model must be synchronized with the inserted text.
     """
-    def __init__(self, languageModel):
+    def __init__(self, languageModel, type = ui.Completion.TextEdit.TYPE_NORMAL):
         self._languageModel = languageModel
+        self._type = type
 
     def __call__(self, suggestions):
         return map(self._process, suggestions)
 
     def _process(self, suggestion):
-        return (suggestion, self._languageModel.probability(suggestion, False), False)
+        return (suggestion, self._languageModel.probability(suggestion, False), self._type)
 
 class SuggestionsLimiter:
     """
@@ -117,3 +120,5 @@ class AddedCharacters:
 
     def _condition(self, suggestion):
         return len(suggestion) > len(self._contextHandler.prefix) + self._difference
+
+

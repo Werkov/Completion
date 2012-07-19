@@ -26,9 +26,11 @@ class Window(QtGui.QWidget):
         self.txtMain                = ui.Completion.TextEdit(self)
         self.txtMain.selector       = config.selector
         self.txtMain.contextHandler = config.contextHandler
-
-        for filter in config.filterChain:
-            self.txtMain.addFilter(filter)
+        if config.predictNext:
+            self.txtMain.predictNext(config.primaryChain, config.secondaryChain, config.merger, config.commonChain)
+        else:
+            for filter in config.filterChain:
+                self.txtMain.addFilter(filter)
 
         layout = QtGui.QVBoxLayout(self)
         layout.addWidget(self.txtMain)

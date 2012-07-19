@@ -1,5 +1,4 @@
 import argparse
-
 from common import pathFinder
 import common.Tokenize
 from common.configuration import Configuration as Configuration
@@ -71,13 +70,17 @@ class Basic(Configuration):
         return common.Tokenize.TextFileTokenizer
 
     def _createSentenceTokenizer(self):
-        if 'abbr' in self._params:
+        if 'abbr' in self._params and self._params['abbr']:
             abbr = open(pathFinder(self._params['abbr']), 'r')
             abbreviations = [l.strip() for l in abbr.readlines()]
             abbr.close()
         else:
             abbreviations = []
         return common.Tokenize.SentenceTokenizer(abbreviations=abbreviations)
+
+    # UI
+    def _createPredictNext(self):
+        return False
 
 class Simple(Basic):
     description = """KenLM for probability evaluation and its vocabulary for uniform selector."""
@@ -148,3 +151,39 @@ class BigramCached(Bigram):
     def _createCachedModel(self):
         return lm.Model.CachedModel()
 
+class BigramNext(BigramCached):
+    description = """KenLM for probability evaluation and bigram selector based
+    on ARPA file + cache. EXPERIMENATL: Suggests also continuations of the first word."""
+    aliases     = ['bcn']
+
+    def _createPredictNext(self):
+        return True
+
+    def _createPrimaryChain(self):
+        return [
+            self.addedCharsFilter,
+            self.probabilityFilter,
+            self.sortFilter,
+            self.limitFilter,
+            self.capitalizeFilter
+        ]
+
+    def _createSecondaryChain(self):
+        return [
+            self.addedCharsFilter,
+            self.probabilityFilter,
+            self.sortFilter,
+            self.limitFilter,
+            # don't need capitalization
+        ]
+    def _createMerger(self):
+        def merge(primary, secondary):
+            primary = list(primary)
+            if not primary:
+                return []
+            pred = primary[0][1]
+            return [(a, b, ui.Completion.TextEdit.TYPE_NORMAL) for a, b, _ in primary] + [(a, pred+b, ui.Completion.TextEdit.TYPE_NEXT) for a, b, _ in secondary]
+        return merge
+
+    def _createCommonChain(self):
+        return [self.sortFilter]
