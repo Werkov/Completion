@@ -8,6 +8,14 @@ class Model {
 %End
 public:
     Model(const std::string &str, bool loadVocabulary = true);
+%MethodCode
+    try {
+        sipCpp = new Model(*a0);
+    } catch(util::Exception e) {
+        PyErr_SetString(PyExc_IOError, e.what());
+        sipCpp = 0;
+    }
+%End
     PyObject* vocabulary();
 %Docstring
 Return frozenset of tokens representing words in model's vocabulary.

@@ -26,7 +26,7 @@ public:
 
     /**
      * Create selector from ARPA file, gzipped ARPA file or binary file. 
-     * Serialization is optinal (default is BinarySerialization) and
+     * Serialization is optional (default is BinarySerialization) and
      * ARPASelector doesn't take ownership.
      * */
     ARPASelector(const std::string & filename, BinarySerialization* serialization = 0);
