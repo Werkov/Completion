@@ -1,4 +1,4 @@
-import common.Tokenize
+import common.tokenize
 
 class Metric:
     """Metric class has its own state. It could be changed by `measure` method
@@ -63,7 +63,7 @@ class QwertyMetric(Metric):
 
     def measure(self, token):
         super().measure(token)
-        if token in [common.Tokenize.TOKEN_END_SENTENCE]:
+        if token in [common.tokenize.TOKEN_END_SENTENCE]:
             return
         keystrokes = 0 # per token
         prefix = ""
@@ -124,7 +124,7 @@ class SelectorMetric(Metric):
 
     def measure(self, token):
         super().measure(token)
-        if token in [common.Tokenize.TOKEN_END_SENTENCE]:
+        if token in [common.tokenize.TOKEN_END_SENTENCE]:
             return
 
         sugg = [w for w, _, _ in self._suggestions()]

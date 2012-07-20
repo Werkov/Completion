@@ -1,12 +1,12 @@
 import argparse
 from common import pathFinder
-import common.Tokenize
+import common.tokenize
 from common.configuration import Configuration as Configuration
-import lm.Model
-import lm.Selection
+import lm.model
+import lm.selection
 from lm.kenlm import Model as KenLMModel
-import ui.Completion
-import ui.Filter
+import ui.completion
+import ui.filter
 
 
 
@@ -38,7 +38,7 @@ class Basic(Configuration):
         return lm.Selector()
 
     def _createContextHandler(self):
-        contextHandler = ui.Completion.ContextHandler(self.stringTokenizer, self.sentenceTokenizer)
+        contextHandler = ui.ContextHandler(self.stringTokenizer, self.sentenceTokenizer)
         return contextHandler
 
     def _createLanguageModel(self):
@@ -46,16 +46,16 @@ class Basic(Configuration):
 
     # suggestions filters
     def _createAddedCharsFilter(self):
-        return ui.Filter.AddedCharacters(self.contextHandler)
+        return ui.filter.AddedCharacters(self.contextHandler)
 
     def _createCapitalizeFilter(self):
-        return ui.Filter.SentenceCapitalizer(self.contextHandler)
+        return ui.filter.SentenceCapitalizer(self.contextHandler)
 
     def _createProbabilityFilter(self):
-        return ui.Filter.ProbabilityEstimator(self.languageModel)
+        return ui.filter.ProbabilityEstimator(self.languageModel)
 
     def _createLimitFilter(self):
-        return ui.Filter.SuggestionsLimiter()
+        return ui.filter.SuggestionsLimiter()
 
     def _createSortFilter(self):
         def sortFilter(suggestions):
@@ -64,10 +64,10 @@ class Basic(Configuration):
 
     # tokenization
     def _createStringTokenizer(self):
-        return common.Tokenize.StringTokenizer()
+        return common.tokenize.StringTokenizer()
 
     def _createTextFileTokenizerClass(self):
-        return common.Tokenize.TextFileTokenizer
+        return common.tokenize.TextFileTokenizer
 
     def _createSentenceTokenizer(self):
         if 'abbr' in self._params and self._params['abbr']:
@@ -76,7 +76,7 @@ class Basic(Configuration):
             abbr.close()
         else:
             abbreviations = []
-        return common.Tokenize.SentenceTokenizer(abbreviations=abbreviations)
+        return common.tokenize.SentenceTokenizer(abbreviations=abbreviations)
 
     # UI
     def _createPredictNext(self):
@@ -92,7 +92,7 @@ class Simple(Basic):
 
 
     def _createSelector(self):
-        return lm.Selection.UniformSelector(languageModel=self.languageModel)
+        return lm.selection.UniformSelector(languageModel=self.languageModel)
 
     def _createLanguageModel(self):
         return KenLMModel(pathFinder(self._params['lm']))
@@ -109,7 +109,7 @@ class Uniform(Simple):
 
 
     def _createSelector(self):
-        return lm.Selection.UniformSelector(KenLMModel(pathFinder(self._params['voc'])).vocabulary())
+        return lm.selection.UniformSelector(KenLMModel(pathFinder(self._params['voc'])).vocabulary())
     def _createLanguageModel(self):
         return KenLMModel(pathFinder(self._params['lm']))
 
@@ -125,7 +125,7 @@ class Bigram(Simple):
 
 
     def _createSelector(self):
-        return lm.Selection.BigramSelector(pathFinder(self._params['sel']), self.contextHandler)
+        return lm.selection.BigramSelector(pathFinder(self._params['sel']), self.contextHandler)
     def _createLanguageModel(self):
         return KenLMModel(pathFinder(self._params['lm']), False)
 
@@ -137,19 +137,19 @@ class BigramCached(Bigram):
 
 
     def _createSelector(self):
-        multi = lm.Selection.MultiSelector()
-        multi.addSelector(lm.Selection.BigramSelector(pathFinder(self._params['sel']), self.contextHandler))
-        multi.addSelector(lm.Selection.UniformSelector(languageModel=self.cachedModel))
+        multi = lm.selection.MultiSelector()
+        multi.addSelector(lm.selection.BigramSelector(pathFinder(self._params['sel']), self.contextHandler))
+        multi.addSelector(lm.selection.UniformSelector(languageModel=self.cachedModel))
         return multi
     
     def _createLanguageModel(self):
-        lin = lm.Model.LInterpolatedModel()
+        lin = lm.model.LInterpolatedModel()
         lin.addModel(KenLMModel(pathFinder(self._params['lm']), False), 0.93)
         lin.addModel(self.cachedModel, 0.07)
         return lin
     
     def _createCachedModel(self):
-        return lm.Model.CachedModel()
+        return lm.model.CachedModel()
 
 class BigramNext(BigramCached):
     description = """KenLM for probability evaluation and bigram selector based
@@ -182,7 +182,7 @@ class BigramNext(BigramCached):
             if not primary:
                 return []
             pred = primary[0][1]
-            return [(a, b, ui.Completion.TextEdit.TYPE_NORMAL) for a, b, _ in primary] + [(a, pred+b, ui.Completion.TextEdit.TYPE_NEXT) for a, b, _ in secondary]
+            return [(a, b, ui.completion.TextEdit.TYPE_NORMAL) for a, b, _ in primary] + [(a, pred+b, ui.completion.TextEdit.TYPE_NEXT) for a, b, _ in secondary]
         return merge
 
     def _createCommonChain(self):

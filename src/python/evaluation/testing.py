@@ -1,5 +1,4 @@
-import common.Tokenize
-import ui
+import common.tokenize
 
 class AutomatedTest:
     def __init__(self, file, config):
@@ -15,10 +14,10 @@ class AutomatedTest:
         tokenizer = self._config.textFileTokenizerClass(self._file)
         sentences = self._config.sentenceTokenizer
         sentences.reset(tokenizer)
-        tokens = ui.TokenNormalizer(sentences)
+        tokens = common.tokenize.TokenNormalizer(sentences)
 
         for token in tokens:
-            if token != common.Tokenize.TOKEN_BEG_SENTENCE:
+            if token != common.tokenize.TOKEN_BEG_SENTENCE:
                 for metric in self.metrics:
                     metric.measure(token)
             self._config.contextHandler.shift(token)

@@ -3,8 +3,8 @@ import sys
 import collections
 
 import lm
-import lm.Probability
-import common.Tokenize
+import lm.probability
+import common.tokenize
 
 class CachedModel(lm.LangModel):
     def __init__(self, size = 100):
@@ -86,7 +86,7 @@ class LInterpolatedModel(lm.LangModel):
             discount = 0
             for token in data:
                 comb = [weight * 2 ** model.probability(token, True) for model, weight in zip(self._models, self._weights)]
-                if token in [common.Tokenize.TOKEN_BEG_SENTENCE]:  # only shift models, don't count
+                if token in [common.tokenize.TOKEN_BEG_SENTENCE]:  # only shift models, don't count
                     discount += 1
                     continue
                     

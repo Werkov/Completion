@@ -8,7 +8,7 @@ import os
 
 if __name__ == "__main__":
     sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
-import common.Tokenize
+import common.tokenize
 
 
 class DataCollector:
@@ -21,7 +21,7 @@ class DataCollector:
 
     @staticmethod
     def normalize(token):
-        return token[0] if token[1] != common.Tokenize.TYPE_NUMBER else common.Tokenize.TOKEN_NUMERIC
+        return token[0] if token[1] != common.tokenize.TYPE_NUMBER else common.tokenize.TOKEN_NUMERIC
 
 
 
@@ -29,7 +29,7 @@ class DataCollector:
         """Simple ngram stats for file"""
         # Create N copies of iterator shifted in order to window represent current token
         # and N-1 preceding. Current token is last.
-        tokens = common.Tokenize.TextFileTokenizer(fin)
+        tokens = common.tokenize.TextFileTokenizer(fin)
         N = 2
         streams = [chain([None] * (N-n-1), it) for n, it in enumerate(tee(tokens, N))]
         lastFollowedDot = None
@@ -41,7 +41,7 @@ class DataCollector:
                 lastFollowedDot = prev
             if current[0].isupper() and lastFollowedDot:
                 self.followedDotCap[lastFollowedDot] += 1
-            if window[-1][1] != common.Tokenize.TYPE_DELIMITER:
+            if window[-1][1] != common.tokenize.TYPE_DELIMITER:
                 lastFollowedDot = None
             self.total[current] += 1
             self.length += 1

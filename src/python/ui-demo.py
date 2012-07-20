@@ -6,7 +6,7 @@ import os.path
 from PyQt4 import QtGui
 import argparse
 import common.configuration
-import ui.Completion
+import ui.completion
 
 
 
@@ -63,7 +63,7 @@ class Window(QtGui.QMainWindow):
     def initComponent(self):
         config = common.configuration.current
 
-        self.txtMain                = ui.Completion.TextEdit(self)
+        self.txtMain                = ui.completion.TextEdit(self)
         self.txtMain.selector       = config.selector
         self.txtMain.contextHandler = config.contextHandler
         if config.predictNext:

@@ -1,30 +1,62 @@
-import common.Tokenize
+import common.tokenize
 
-class TokenNormalizer:
+class ContextHandler:
     """
-    Accepts sequence of (unfinished) sentences and converts each token tuple into string
-    representation, merge sentences and delimits them by special tokens.
+    Keep components with state synchronized with input text.
+
+    Components (listeners) are considered to have a state that can be changed with incoming
+    token in only forward direction. Normally, state is changed gradually as the
+    text is typed; in the case of cursor moves/correcting text, components are
+    reset to the beginning state and "shifted" to current state.
+
+    Listeners must have `shift(token)` and `reset()` methods.
     """
+    def __init__(self, tokenizer, sentencer, normalizer=None):
+        self.context = []
+        self.prefix = ""
+        self._tokenizer = tokenizer
+        self._sentencer = sentencer
+        self._normalizer = common.tokenize.TokenNormalizer() if not normalizer else normalizer
+        self._listeners = []
 
-    def __init__(self, sentences = None):
-        self.reset(sentences)
+    def addListener(self, listener):
+        """Register a listener to keep in sync with text."""
+        self._listeners.append(listener)
 
-    def reset(self, sentences = None):
-        self.sentences = sentences if sentences else []
+    def update(self, text):
+        """Call with the text that should be the new context."""
+        self._tokenizer.reset(text, True)
+        self._sentencer.reset(self._tokenizer)
+        self._normalizer.reset(self._sentencer)
 
-    def __iter__(self):
-        for sentence in self.sentences:
-            yield common.Tokenize.TOKEN_BEG_SENTENCE
-            for token in map(self._mapToken, sentence):
-                yield token
-            
+        tokens = list(self._normalizer)
+        self.prefix = self._tokenizer.uncompleteToken[0] if self._tokenizer.uncompleteToken else ""
 
-    def _mapToken(self, token):
-        if token[1] == common.Tokenize.TYPE_NUMBER:
-            return common.Tokenize.TOKEN_NUMERIC
-        elif token[1] == common.Tokenize.TYPE_SENTENCE_END:
-            return common.Tokenize.TOKEN_END_SENTENCE
-        else:
-            return token[0]
+        if len(tokens) < len(self.context) or tokens[:len(self.context)] != self.context:
+            print("reseting whole model")
+            self._reset()
+            self.context = []
 
+        newTokens = tokens[len(self.context):]
+        if newTokens and newTokens[-1] == common.tokenize.TOKEN_END_SENTENCE:
+            newTokens.append(common.tokenize.TOKEN_BEG_SENTENCE)
 
+        for token in newTokens:
+            self._shift(token)
+        self.context += newTokens
+
+    def _reset(self):
+        for listener in self._listeners:
+            listener.reset()
+
+    def _shift(self, token):
+        for listener in self._listeners:
+            listener.shift(token)
+
+    def reset(self):
+        self.context = []
+        self.prefix = ""
+
+    def shift(self, token):
+        self.context.append(token)
+        self._shift(token)

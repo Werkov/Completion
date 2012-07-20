@@ -4,7 +4,7 @@ import itertools
 
 import lm
 import lm.arpaselector
-import common.Tokenize
+import common.tokenize
 
 
 class UniformSelector(lm.Selector):
@@ -37,8 +37,8 @@ class BigramSelector(lm.arpaselector.ARPASelector):
 
     def suggestions(self, prefix):
         if len(prefix) > 0 \
-            and (self._contextHandler.context[-1] == common.Tokenize.TOKEN_BEG_SENTENCE \
-                 or self._contextHandler.context[-1] == common.Tokenize.TOKEN_END_SENTENCE):
+            and (self._contextHandler.context[-1] == common.tokenize.TOKEN_BEG_SENTENCE \
+                 or self._contextHandler.context[-1] == common.tokenize.TOKEN_END_SENTENCE):
             prefix = prefix[0].lower() + prefix[1:]
 
         if len(prefix) > 3:

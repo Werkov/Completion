@@ -2,8 +2,8 @@
 
 import argparse
 import common.configuration
-import evaluation.Testing
-import evaluation.Metrics
+import evaluation.testing
+import evaluation.metrics
 
 def main():
     # initialize own parser
@@ -17,12 +17,12 @@ def main():
     args = parser.parse_args()
     common.configuration.createFromArgs(args)
         
-    test = evaluation.Testing.AutomatedTest(args.file, common.configuration.current)
+    test = evaluation.testing.AutomatedTest(args.file, common.configuration.current)
 
-    test.metrics.append(evaluation.Metrics.Metric(common.configuration.current))
-    test.metrics.append(evaluation.Metrics.PerplexityMetric(common.configuration.current))
-    test.metrics.append(evaluation.Metrics.QwertyMetric(common.configuration.current))
-#    test.metrics.append(evaluation.Metrics.SelectorMetric(common.configuration.current))
+    test.metrics.append(evaluation.metrics.Metric(common.configuration.current))
+    test.metrics.append(evaluation.metrics.PerplexityMetric(common.configuration.current))
+    test.metrics.append(evaluation.metrics.QwertyMetric(common.configuration.current))
+#    test.metrics.append(evaluation.metrics.SelectorMetric(common.configuration.current))
 
     
     test.runTest()

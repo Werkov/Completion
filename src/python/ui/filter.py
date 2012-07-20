@@ -1,9 +1,9 @@
-import ui.Completion
+import ui.completion
 import math
 import itertools
 
 from common import Trie
-import common.Tokenize
+import common.tokenize
 import ui
 
 
@@ -66,8 +66,8 @@ class SentenceCapitalizer:
         return map(self._process, suggestions)
 
     def _process(self, suggestion):
-        if self._contextHandler.context[-1] == common.Tokenize.TOKEN_BEG_SENTENCE \
-            or self._contextHandler.context[-1] == common.Tokenize.TOKEN_END_SENTENCE:
+        if self._contextHandler.context[-1] == common.tokenize.TOKEN_BEG_SENTENCE \
+            or self._contextHandler.context[-1] == common.tokenize.TOKEN_END_SENTENCE:
             return (suggestion[0][0].upper() + suggestion[0][1:], suggestion[1], suggestion[2])
         else:
             return suggestion
@@ -78,7 +78,7 @@ class ProbabilityEstimator:
 
     Language model must be synchronized with the inserted text.
     """
-    def __init__(self, languageModel, type = ui.Completion.TextEdit.TYPE_NORMAL):
+    def __init__(self, languageModel, type = ui.completion.TextEdit.TYPE_NORMAL):
         self._languageModel = languageModel
         self._type = type
 

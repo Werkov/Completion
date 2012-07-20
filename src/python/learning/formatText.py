@@ -7,7 +7,7 @@ import os
 if __name__ == "__main__":
     sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 
-import common.Tokenize
+import common.tokenize
 
 class TokenNormalizer:
     """
@@ -28,13 +28,13 @@ class TokenNormalizer:
             yield sentence
 
     def _mapToken(self, token):
-        if token[1] == common.Tokenize.TYPE_NUMBER:
-            return common.Tokenize.TOKEN_NUMERIC
+        if token[1] == common.tokenize.TYPE_NUMBER:
+            return common.tokenize.TOKEN_NUMERIC
         else:
             return token[0]
         
     def _filterToken(self, token):
-        return token[1] != common.Tokenize.TYPE_SENTENCE_END
+        return token[1] != common.tokenize.TYPE_SENTENCE_END
 
 
 
@@ -47,8 +47,8 @@ def formatFile(fin, fout, abbreviations=set()):
     return  number of parsed sentences
     """
     cntSentences = 0
-    tft = common.Tokenize.TextFileTokenizer(fin)
-    sent = common.Tokenize.SentenceTokenizer(tft, abbreviations = abbreviations)
+    tft = common.tokenize.TextFileTokenizer(fin)
+    sent = common.tokenize.SentenceTokenizer(tft, abbreviations = abbreviations)
     filter = TokenNormalizer(sent)
     cntSentences = 0
     for sentence in filter:
