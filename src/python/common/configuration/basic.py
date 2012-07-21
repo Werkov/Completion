@@ -16,7 +16,7 @@ class Basic(Configuration):
 
     @staticmethod
     def configureArgParser(parser):
-        parser.add_argument('-abbr', help='path to abbreviatrons file')
+        parser.add_argument('-abbr', help='path to abbreviations file')
 
 
     def _initialize(self):

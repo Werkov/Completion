@@ -2,8 +2,9 @@ import common.tokenize
 
 class Metric:
     """Metric class has its own state. It could be changed by `measure` method
-    that's called for every input token. Metric results (tuple for given state)
-    are returned by `result` method. `reset` will put metric into initial state.
+    that's called for every input token. Metric results (tuple of numbers
+    for given state) are returned by `result` method. `reset` will put metric
+    into initial state.
     
     IMPORTANT: Metric must not change the state of used objects.
     """
@@ -24,11 +25,20 @@ class Metric:
     def result(self):
         return self._n,
 
-    def _suggestions(self, prefix = ""):
+    def resultHeader(self):
+        return 'tokens',
+
+    def resultFormat(self):
+        return [None] * len(self.resultHeader())
+
+    def _suggestions(self, prefix=""):
         ll = self._config.selector.suggestions(prefix)
         for filter in self._config.filterChain:
             ll = filter(ll)
         return list(ll)
+
+    def __hash__(self):
+        return self.name
 
 
 
@@ -48,6 +58,9 @@ class PerplexityMetric(Metric):
 
     def result(self):
         return 2 ** (self._entropy / self._n),
+
+    def resultHeader(self):
+        return 'pplxity',
 
 class QwertyMetric(Metric):
     """Emulates optimal typing on classical keyboard (full QWERTY-like layout).
@@ -106,6 +119,9 @@ class QwertyMetric(Metric):
     def result(self):
         return self._keystrokeCnt / self._charCnt,
 
+    def resultHeader(self):
+        return 'QWERTY keystroke ratio',
+
 class BikeyboardMetric:
     pass
 
@@ -143,4 +159,7 @@ class SelectorMetric(Metric):
 
     def result(self):
         return self._hitCnt[0] / self._n, self._hitCnt[1] / self._n, 1 - (self._saved / self._c)# if self._hitCnt > 0 else None
+
+    def resultHeader(self):
+        return 'sugg ratio', '1st char sugg ratio'
 

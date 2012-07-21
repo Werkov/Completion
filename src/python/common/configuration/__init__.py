@@ -50,10 +50,18 @@ class Configuration:
     #
     # Argument parsing facilities
     #
-
+    @staticmethod
     def configureArgParser(parser):
         """Configure argparse.ArgumentParser for parameters required by the configuration."""
         pass
+
+    def __str__(self):
+        result = ['# Configuration:\t' + self.__class__.__name__]
+        result.append('Parameters:')
+        for k, v in sorted(self._params.items()):
+            result.append('\t{}:\t{}'.format(k, v))
+        result.append('')
+        return '\n# '.join(result)
 
     description = None
     aliases     = []
