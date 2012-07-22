@@ -54,13 +54,40 @@ class PerplexityMetric(Metric):
     def measure(self, token):
         super().measure(token)
         prob = self._config.languageModel.probability(token, False)
-        self._entropy  += -prob    
+        self._entropy  += -prob
 
     def result(self):
         return 2 ** (self._entropy / self._n),
 
     def resultHeader(self):
         return 'pplxity',
+
+class PerplexityMetricOOV(PerplexityMetric):
+    """Cross entropy per (word) token for model on given text.
+    Ignore OOV tokens
+
+    IMPORTANT: To work properly, language model must have vocabulary filled.
+    """
+
+    name = "pplxity OOV"
+
+    def reset(self):
+        super().reset()
+        self._OOVs = 0
+
+    def measure(self, token):
+        if token in self._config.languageModel.vocabulary():
+            super().measure(token)
+            prob = self._config.languageModel.probability(token, False)
+            self._entropy  += -prob
+        else:
+            self._OOVs += 1
+
+    def resultHeader(self):
+        return 'pplxity\'', 'OOV'
+
+    def result(self):
+        return  super().result() + (self._OOVs,)
 
 class QwertyMetric(Metric):
     """Emulates optimal typing on classical keyboard (full QWERTY-like layout).
