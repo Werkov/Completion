@@ -1,5 +1,6 @@
 import os.path
 import os
+import collections
 
 def pathFinder(path, pathVar="LMPATH"):
     """Find given name in paths specified by given environment variable.
@@ -11,6 +12,10 @@ def pathFinder(path, pathVar="LMPATH"):
         if os.path.exists(fullPath):
             return fullPath
     return path
+
+class SimpleTrie(collections.defaultdict):
+    def __init__(self):
+        super().__init__(SimpleTrie)
 
 class TrieNode:
     """Unused"""    
