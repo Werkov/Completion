@@ -94,9 +94,6 @@ void ARPASelector::loadFromARPA(const std::string& filename) {
     util::FilePiece f(filename.c_str(), &std::cerr);
     lm::ReadARPACounts(f, counts);
 
-    if(counts.size() < 2) {
-        UTIL_THROW(lm::FormatLoadException, "Selector needs at least a bigram model.");
-    }
     lm::ProbBackoff dummy; // we don't need backoff values
 
     // -- load unigrams --
@@ -116,37 +113,44 @@ void ARPASelector::loadFromARPA(const std::string& filename) {
     std::sort(unigrams_.begin(), unigrams_.end());
     VERBOSE_INFO("Sorted unigrams.");
 
-    // -- load bigrams --
-    lm::ReadNGramHeader(f, 2);
+    if(counts.size() >= 2) {
+        // -- load bigrams --
+        lm::ReadNGramHeader(f, 2);
 
-    for(uint64_t i = 0; i < counts[1]; ++i) {
-        f.ReadFloat(); // probability
-        if (f.get() != '\t') UTIL_THROW(lm::FormatLoadException, "Expected tab after probability");
-        std::string firstWord = f.ReadDelimited(lm::kARPASpaces).as_string();
-        std::string secondWord = f.ReadDelimited(lm::kARPASpaces).as_string();
+        for(uint64_t i = 0; i < counts[1]; ++i) {
+            f.ReadFloat(); // probability
+            if (f.get() != '\t') UTIL_THROW(lm::FormatLoadException, "Expected tab after probability");
+            std::string firstWord = f.ReadDelimited(lm::kARPASpaces).as_string();
+            std::string secondWord = f.ReadDelimited(lm::kARPASpaces).as_string();
 
-        uint64_t first  = wordToIndex(firstWord);
-        uint64_t second = wordToIndex(secondWord);
+            uint64_t first  = wordToIndex(firstWord);
+            uint64_t second = wordToIndex(secondWord);
 
-        bigramMap[first].push_back(second);
+            bigramMap[first].push_back(second);
 
-        lm::ReadBackoff(f, dummy);
+            lm::ReadBackoff(f, dummy);
+        }
+        VERBOSE_INFO("Loaded bigrams.");
+
+        // -- sort bigrams and create offset table
+        sorting::WordIndexComparator cmp(unigrams_);
+
+        Offset currentOffset = 0;
+        for(BigramMap::iterator it = bigramMap.begin(); it != bigramMap.end(); ++it) {
+            std::sort(it->begin(), it->end(), cmp);
+            bigrams_.insert(bigrams_.end(), it->begin(), it->end());
+            offsets_[it - bigramMap.begin()] = currentOffset;
+            currentOffset += it->size();
+            if(it->size() > 10000) {
+                VERBOSE_INFO("Big context: " << unigrams_[it - bigramMap.begin()]);
+            }
+            it->clear();
+        }
+
+        VERBOSE_INFO("Sorted bigrams.");
+    } else {
+        VERBOSE_INFO("ARPA contains an unigram model, loaded unigrams only.");
     }
-    VERBOSE_INFO("Loaded bigrams.");
-
-    // -- sort bigrams and create offset table
-    sorting::WordIndexComparator cmp(unigrams_);
-
-    Offset currentOffset = 0;
-    for(BigramMap::iterator it = bigramMap.begin(); it != bigramMap.end(); ++it) {
-        std::sort(it->begin(), it->end(), cmp);
-        bigrams_.insert(bigrams_.end(), it->begin(), it->end());
-        offsets_[it - bigramMap.begin()] = currentOffset;
-        currentOffset += it->size();
-        it->clear();
-    }
-
-    VERBOSE_INFO("Sorted bigrams.");
     VERBOSE_INFO("Finished loading.");
 }
 
@@ -187,12 +191,16 @@ void ARPASelector::reset()
 
 ARPASelector::Unigrams ARPASelector::bigramSuggestions(const std::string& prefix) {
     Unigrams result;
-    if(context_ == std::numeric_limits<WordIndex>::max()) {
+    if(context_ == std::numeric_limits<WordIndex>::max()) { // no context
         return result;
     }
 
     Offset bBegin = offsets_[context_];
     Offset bEnd = (context_ < offsets_.size()) ? offsets_[context_ + 1] : bigrams_.size();
+
+    if(bEnd == bBegin) { // no continuations
+        return result;
+    }
 
     sorting::WordIndexPrefixAccessor accessor(unigrams_, prefix);
     Bigrams::const_iterator end = util::BinaryBelow(accessor, bigrams_.begin() + bBegin, bigrams_.begin() + bEnd, prefix);

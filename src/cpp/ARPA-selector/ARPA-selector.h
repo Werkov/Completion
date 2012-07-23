@@ -45,7 +45,7 @@ public:
     /**
      * Return suggestions starting with given prefix pruned with current context.
      * Returned order is lexicographic on C++ strings.
-     * For null context return always empty list.
+     * For null context return always empty list and for unloaded bigrams as well.
      * */
     Unigrams bigramSuggestions(const std::string & prefix = "");
 
