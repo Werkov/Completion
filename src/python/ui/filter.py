@@ -1,10 +1,10 @@
-import ui.completion
-import math
 import itertools
+import math
 
 from common import Trie
 import common.tokenize
 import ui
+import ui.completion
 
 
 class EndingAggegator:
@@ -78,12 +78,12 @@ class ProbabilityEstimator:
 
     Language model must be synchronized with the inserted text.
     """
-    def __init__(self, languageModel, type = ui.completion.TextEdit.TYPE_NORMAL):
+    def __init__(self, languageModel, type=ui.completion.TextEdit.TYPE_NORMAL):
         self._languageModel = languageModel
         self._type = type
 
     def __call__(self, suggestions):
-        return map(self._process, suggestions)
+        return (map(self._process, suggestions[0]), suggestions[1])
 
     def _process(self, suggestion):
         return (suggestion, self._languageModel.probability(suggestion, False), self._type)
@@ -93,12 +93,17 @@ class SuggestionsLimiter:
     Limit the number of suggestions by the minimal (log 2) probability and
     maximal count. This should reduce the cognitive load.
     """
-    def __init__(self, minProbability = -16, maxCount = 10):
+    def __init__(self, minProbability=-16, maxCount=10, prefixCondition=False):
         self._minProbability = minProbability
         self._maxCount = maxCount
+        self._prefixCondition = prefixCondition
 
     def __call__(self, suggestions):
-        probLimited = itertools.takewhile(lambda sugg: sugg[1] >= self._minProbability, suggestions)
+        if self._prefixCondition:
+            shift = math.log(suggestions[1], 2) if suggestions[1] > 0 else -100
+        else:
+            shift = 0
+        probLimited = itertools.takewhile(lambda sugg: sugg[1] - shift >= self._minProbability, suggestions[0])
         return itertools.islice(probLimited, self._maxCount)
 
 class AddedCharacters:
@@ -108,7 +113,7 @@ class AddedCharacters:
     Can be active only for nonempty prefix.
     Works with simple suggestions (not tuples).
     """
-    def __init__(self, contextHandler, difference = 0, emptyPrefix = False):
+    def __init__(self, contextHandler, difference=0, emptyPrefix=False):
         self._contextHandler = contextHandler
         self._difference = difference
         self._emptyPrefix = emptyPrefix
@@ -116,7 +121,7 @@ class AddedCharacters:
     def __call__(self, suggestions):
         if self._emptyPrefix and self._contextHandler.prefix == "":
             return suggestions
-        return filter(self._condition, suggestions)
+        return (filter(self._condition, suggestions[0]), suggestions[1])
 
     def _condition(self, suggestion):
         return len(suggestion) > len(self._contextHandler.prefix) + self._difference

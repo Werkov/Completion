@@ -25,17 +25,26 @@ public:
 Reset selector to null context.
 %End
 
-    std::vector<std::string> unigramSuggestions(const std::string& prefix);
+    std::vector<std::string> unigramSuggestions(double & prefixProb, const std::string& prefix);
 %Docstring
 Return suggestions starting with given prefix.
 Returned order is lexicographic on C++ strings.
-%End
 
-    std::vector<std::string> bigramSuggestions(const std::string& prefix);
+Also return probability of given prefix (tupled with the list).
+It's a MLE from uniform distribution.
+%End
+//%MethodCode
+//     // haha
+//%End
+
+    std::vector<std::string> bigramSuggestions(double & prefixProb, const std::string& prefix);
 %Docstring
 Return suggestions starting with given prefix pruned with current context.
 Returned order is lexicographic on C++ strings.
-For null context return always empty list.
+For null context return always empty list and for unloaded bigrams as well.
+
+Also return probability of given prefix in given context (tupled with the list).
+It's a MLE from uniform distribution.
 %End
 
     void shift(const std::string &token);

@@ -163,8 +163,9 @@ WordIndex ARPASelector::wordToIndex(const std::string& word) const {
     }
 }
 
-ARPASelector::Unigrams ARPASelector::unigramSuggestions(const std::string& prefix) {
+ARPASelector::Unigrams ARPASelector::unigramSuggestions(double & prefixProb, const std::string& prefix) {
     Unigrams result;
+    prefixProb = 0;
 
     sorting::UnigramPrefixAccessor accessor(prefix);
     Unigrams::const_iterator end = util::BinaryBelow(accessor, unigrams_.begin(), unigrams_.end(), prefix);
@@ -173,6 +174,7 @@ ARPASelector::Unigrams ARPASelector::unigramSuggestions(const std::string& prefi
     while(beg >= unigrams_.begin() && accessor(beg) == prefix) --beg;
     if(beg < end) {
         result.insert(result.end(), beg + 1, end + 1);
+        prefixProb = (double)(end - beg) / unigrams_.size();
     }
 
     return result;
@@ -189,8 +191,9 @@ void ARPASelector::reset()
 
 
 
-ARPASelector::Unigrams ARPASelector::bigramSuggestions(const std::string& prefix) {
+ARPASelector::Unigrams ARPASelector::bigramSuggestions(double & prefixProb, const std::string& prefix) {
     Unigrams result;
+    prefixProb = 0;
     if(context_ == std::numeric_limits<WordIndex>::max()) { // no context
         return result;
     }
@@ -209,6 +212,9 @@ ARPASelector::Unigrams ARPASelector::bigramSuggestions(const std::string& prefix
     while(beg >= bigrams_.begin() + bBegin && accessor(beg) == prefix) --beg;
     for(Bigrams::const_iterator it = beg + 1; it <= end; ++it) {
         result.push_back(unigrams_[*it]);
+    }
+    if(beg < end) {
+        prefixProb = (double)(end - beg) / (bEnd - bBegin);
     }
 
     return result;

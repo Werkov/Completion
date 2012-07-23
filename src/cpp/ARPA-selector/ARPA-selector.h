@@ -46,14 +46,20 @@ public:
      * Return suggestions starting with given prefix pruned with current context.
      * Returned order is lexicographic on C++ strings.
      * For null context return always empty list and for unloaded bigrams as well.
+     * 
+     * Also return probability of given prefix in given context (`prefixProb` parameter).
+     * It's a MLE from uniform distribution.
      * */
-    Unigrams bigramSuggestions(const std::string & prefix = "");
+    Unigrams bigramSuggestions(double & prefixProb, const std::string & prefix = "");
 
     /**
      * Return suggestions starting with given prefix.
      * Returned order is lexicographic on C++ strings.
+     * 
+     * Also return probability of given prefix (`prefixProb` parameter).
+     * It's a MLE from uniform distribution.
      * */
-    Unigrams unigramSuggestions(const std::string & prefix = "");
+    Unigrams unigramSuggestions(double & prefixProb, const std::string & prefix = "");
 
 
 private:
