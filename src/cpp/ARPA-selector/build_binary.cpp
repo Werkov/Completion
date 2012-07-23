@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include "util/exception.hh"
 #include "ARPA-selector.h"
@@ -11,8 +12,9 @@ using namespace std;
 typedef vector<string> Args;
 
 void printUsage(const string & binary) {
-    cerr << "Usage: " << binary << " [-h] model-file binary-file" << endl;
+    cerr << "Usage: " << binary << " [-h|-c C] model-file binary-file" << endl;
     cerr << "\t-h\t\tshow the usage" << endl;
+    cerr << "\t-c C\t\twhen loading ARPA ignore bigrams with logprob < C\t[-5]" << endl;
     cerr << "\tmodel-file\tARPA file or gzipped ARPA file" << endl;
     cerr << "\tbinary-file\toutput file with binary representation" << endl;
 }
@@ -23,7 +25,8 @@ const int E_BINARY_INPUT = 2;
 int main(int argc, char **argv)
 {
     Args args(argv, argv + argc);
-
+    float crop = -5;
+    int shiftArgs = 0;
     try {
         if(args.size() < 2) {
             throw E_BAD_ARGS;
@@ -36,14 +39,23 @@ int main(int argc, char **argv)
         if(args.size() < 3) {
             throw E_BAD_ARGS;
         }
+        if(args[1] == "-c") {
+            if(args.size() < 5) {
+                throw E_BAD_ARGS;
+            }
+            std::istringstream iss;
+            iss.str(args[2]);          
+            iss >> crop;
+            shiftArgs = 2;
+        }
 
         BinarySerialization bs;
-        if(bs.isBinary(args[1], false)) {
+        if(bs.isBinary(args[1+shiftArgs], false)) {
             throw E_BINARY_INPUT;
         }
 
-        ARPASelector sel(args[1], &bs);
-        bs.writeToFile(args[2], &sel);
+        ARPASelector sel(args[1+shiftArgs], crop, &bs);
+        bs.writeToFile(args[2+shiftArgs], &sel);
         return 0;
     }
     catch(int e) {

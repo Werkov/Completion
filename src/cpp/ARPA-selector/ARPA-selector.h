@@ -29,7 +29,7 @@ public:
      * Serialization is optional (default is BinarySerialization) and
      * ARPASelector doesn't take ownership.
      * */
-    ARPASelector(const std::string & filename, BinarySerialization* serialization = 0);
+    ARPASelector(const std::string & filename, float cropProbability, BinarySerialization* serialization = 0);
     
 
     /**
@@ -49,8 +49,11 @@ public:
      * 
      * Also return probability of given prefix in given context (`prefixProb` parameter).
      * It's a MLE from uniform distribution.
+     * 
+     * If there are more suggestions than `limit` return empty list. For limit 0 return
+     * all suggestions.
      * */
-    Unigrams bigramSuggestions(double & prefixProb, const std::string & prefix = "");
+    Unigrams bigramSuggestions(double & prefixProb, const std::string & prefix = "", Offset limit = 0);
 
     /**
      * Return suggestions starting with given prefix.
@@ -58,8 +61,12 @@ public:
      * 
      * Also return probability of given prefix (`prefixProb` parameter).
      * It's a MLE from uniform distribution.
+     * 
+     * If there are more suggestions than `limit` return empty list. For limit 0 return
+     * all suggestions.
+
      * */
-    Unigrams unigramSuggestions(double & prefixProb, const std::string & prefix = "");
+    Unigrams unigramSuggestions(double & prefixProb, const std::string & prefix = "", Offset limit = 0);
 
 
 private:
@@ -69,7 +76,7 @@ private:
     Bigrams bigrams_;
     Offsets offsets_;
 
-    void loadFromARPA(const std::string & filename);
+    void loadFromARPA(const std::string & filename, float cropProbability);
     WordIndex wordToIndex(const std::string & word) const;    
     WordIndex context_;
 

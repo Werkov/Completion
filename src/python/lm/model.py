@@ -98,24 +98,24 @@ class LInterpolatedModel(lm.LangModel):
             N = len(data) - discount # omitted begin sentences
             newWeights = [contribution / N for contribution in contributions]
             entropy /= N
-            return 2**entropy, newWeights
+            return entropy, newWeights
         # --
         data = list(data) # cache data from sequence for repeated iterations
         print("Running EM algorithm on {} training tokens.".format(len(data)), file=trace)
-        iterations = 0
+        iterations = -1
 
-        prevPplx, newWeights = iteration()
+        prevEntropy, newWeights = iteration()
         while True:
             print("{} W:\t".format(iterations) + "\t".join(["{:.2f}".format(w) for w in self._weights]), file=trace)
             self._weights = newWeights
-            pplx, newWeights = iteration()
-            delta = (pplx-prevPplx) / pplx
-            print("{} P:\t{:.1f}\t{:.1f}\td = {:.1f}%".format(iterations, prevPplx, pplx, delta*100), file=trace)
+            entropy, newWeights = iteration()
+            delta = (entropy-prevEntropy) / entropy
+            print("{} P:\t{:.1f}\t{:.1f}\td = {:.1f}%".format(iterations, prevEntropy, entropy, delta*100), file=trace)
             if delta > 0:
-                print("{}\tSomething went wrong, pplx increased ({}%).".format(iterations, delta*100), file=trace)
+                print("{}\tSomething went wrong, entropy increased ({}%).".format(iterations, delta*100), file=trace)
                 break
-            if (stopDelta and abs(delta) < stopDelta) or iterations > stopIterations:
+            if (stopDelta and abs(delta) < stopDelta) or iterations >= stopIterations:
                 break
-            prevPplx = pplx
+            prevEntropy = entropy
         print("{} W:\t".format(iterations) + "\t".join(["{:.2f}".format(w) for w in self._weights]), file=trace)
 
