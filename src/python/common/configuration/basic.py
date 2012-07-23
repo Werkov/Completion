@@ -32,6 +32,7 @@ class Basic(Configuration):
         # if filter is None, skip it
         return [f for f in [
             self.addedCharsFilter,
+            self.interpunctionFilter,
             self.probabilityFilter,
             self.sortFilter,
             self.limitFilter,
@@ -53,6 +54,10 @@ class Basic(Configuration):
         if params.getboolean('enabled', fallback=True):
             return ui.filter.AddedCharacters(self.contextHandler, ** params)
 
+    def _createInterpunctionFilter(self, params):
+        if params.getboolean('enabled', fallback=True):
+            return ui.filter.FilterTokenType(common.tokenize.TYPE_DELIMITER)
+
     def _createCapitalizeFilter(self, params):
         if params.getboolean('enabled', fallback=True):
             return ui.filter.SentenceCapitalizer(self.contextHandler)
@@ -63,7 +68,7 @@ class Basic(Configuration):
 
     def _createLimitFilter(self, params):
         if params.getboolean('enabled', fallback=True):
-            return ui.filter.SuggestionsLimiter( ** params)
+            return ui.filter.SuggestionsLimiter(** params)
 
     def _createSortFilter(self, params):
         if params.getboolean('enabled', fallback=True):
@@ -136,7 +141,7 @@ class BasicCached(Basic):
         return self.cachedSelector
 
     def _createCachedModel(self, params):
-        return lm.model.CachedModel(** params)
+        return lm.model.CachedModel( ** params)
 
     def _createCachedSelector(self, params):
         return lm.selection.UniformSelector(languageModel=self.cachedModel)

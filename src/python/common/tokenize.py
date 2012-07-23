@@ -37,8 +37,11 @@ class Tokenizer:
 
     def __init__(self):
         self.regexps = []
+        self.reMap = {}
         for type, mask in self.masks:
-            self.regexps.append((type, re.compile(mask)))
+            regexp = re.compile(mask)
+            self.regexps.append((type, regexp))
+            self.reMap[type] = regexp
         
     def _getToken(self, string, pos):
         """Return token starting at the position of the string."""
@@ -47,6 +50,9 @@ class Tokenizer:
             if m:
                 return (m.group(0), type, pos)
         return None
+
+    def isType(self, token, type):
+        return self.reMap[type].match(token)
 
 
 

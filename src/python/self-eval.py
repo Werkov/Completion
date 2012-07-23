@@ -38,7 +38,7 @@ def main():
 
     test.metrics.append(evaluation.metrics.Metric(common.configuration.current))
     test.metrics.append(evaluation.metrics.PerplexityMetric(common.configuration.current))
-    #test.metrics.append(evaluation.metrics.QwertyMetric(common.configuration.current))
+    test.metrics.append(evaluation.metrics.QwertyMetric(common.configuration.current))
     #test.metrics.append(evaluation.metrics.SelectorMetric(common.configuration.current))
 
     

@@ -93,7 +93,7 @@ class SuggestionsLimiter:
     Limit the number of suggestions by the minimal (log 2) probability and
     maximal count. This should reduce the cognitive load.
     """
-    def __init__(self, min_probability=-16, max_count=10, prefix_condition=False, **kwargs):
+    def __init__(self, min_probability=-16, max_count=10, prefix_condition=False, ** kwargs):
         self._minProbability = float(min_probability)
         self._maxCount = int(max_count)
         self._prefixCondition = prefix_condition
@@ -113,7 +113,7 @@ class AddedCharacters:
     Can be active only for nonempty prefix.
     Works with simple suggestions (not tuples).
     """
-    def __init__(self, contextHandler, difference=0, empty_prefix=False, **kwargs):
+    def __init__(self, contextHandler, difference=0, empty_prefix=False, ** kwargs):
         self._contextHandler = contextHandler
         self._difference = int(difference)
         self._emptyPrefix = empty_prefix
@@ -126,4 +126,16 @@ class AddedCharacters:
     def _condition(self, suggestion):
         return len(suggestion) > len(self._contextHandler.prefix) + self._difference
 
+class FilterTokenType:
+    """
+    Exclude suggestions whose token type is of given type.
+    """
+    def __init__(self, tokenType):
+        self.tokenType = tokenType
+        self.tokenizer = common.tokenize.Tokenizer()
 
+    def __call__(self, suggestions):
+        return (filter(self._condition, suggestions[0]), suggestions[1])
+
+    def _condition(self, suggestion):
+        return not self.tokenizer.isType(suggestion, self.tokenType)
