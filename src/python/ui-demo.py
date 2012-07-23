@@ -5,6 +5,7 @@ import os.path
 
 from PyQt4 import QtGui
 import argparse
+import configparser
 import common.configuration
 import ui.completion
 
@@ -130,7 +131,7 @@ class Window(QtGui.QMainWindow):
                                                'Text has been modified.\nDo you wish to save the changes?',
                                                QtGui.QMessageBox.Save | QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel)
             if reply == QtGui.QMessageBox.Save:
-                self.saveFile()
+                self.handleFileSave()
             elif reply == QtGui.QMessageBox.No:
                 return True
             elif reply == QtGui.QMessageBox.Cancel:
@@ -173,16 +174,19 @@ class Window(QtGui.QMainWindow):
 
 def main():
     # initialize own parser
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("-i", help="INI file\t[%(default)s]", type=argparse.FileType('r'), default='lmconfig.ini', dest='inifile')
     parser.add_argument("file", help="text file to edit", type=argparse.FileType('r'), nargs='?')
 
     # append subparsers for configuration parameters
-    subparsers = parser.add_subparsers(title='Configurations', metavar="CONFIGURATION")
-    common.configuration.fillSubparsers(subparsers)
+    common.configuration.updateParser(parser)
 
     # create configuration
     args = parser.parse_args()
-    common.configuration.createFromArgs(args)
+    iniParser = configparser.ConfigParser()
+    iniParser.read_file(args.inifile)
+    common.configuration.createFromParams(args, iniParser)
+    args.inifile.close()
 
     # start GUI
     app = QtGui.QApplication(sys.argv)

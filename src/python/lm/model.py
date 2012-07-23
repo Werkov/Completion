@@ -7,8 +7,8 @@ import lm.probability
 import common.tokenize
 
 class CachedModel(lm.LangModel):
-    def __init__(self, size = 100):
-        self._size = size
+    def __init__(self, size = 100, **kwargs):
+        self._size = int(size)
         self.reset()
 
     def vocabulary(self):        

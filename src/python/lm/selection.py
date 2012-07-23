@@ -32,11 +32,31 @@ class UniformSelector(lm.Selector):
     def _vocabulary(self):
         return self._languageModel.vocabulary() if self._languageModel else self._dictionary
 
-
-class BigramSelector(lm.arpaselector.ARPASelector):
-    def __init__(self, filename, contextHandler):
+class UnigramSelector(lm.arpaselector.ARPASelector):
+    def __init__(self, filename, contextHandler, limit=10000, **kwargs):
         lm.arpaselector.ARPASelector.__init__(self, filename)
         self._contextHandler = contextHandler
+        self._limit = int(limit)
+
+    def suggestions(self, prefix):
+        if len(prefix) > 0 \
+            and self._contextHandler.context[-1] in [common.tokenize.TOKEN_BEG_SENTENCE,
+                common.tokenize.TOKEN_END_SENTENCE]:
+            prefix = prefix[0].lower() + prefix[1:]
+
+        r = self.unigramSuggestions(prefix)
+        l = r[0]
+        if len(l) > self._limit:
+            l = []#l = [w for w in l if len(w) > 5] # experimental
+        return (l, r[1])
+
+
+class BigramSelector(lm.arpaselector.ARPASelector):
+    def __init__(self, filename, contextHandler, limit=10000, unigram_threshold=3, **kwargs):
+        lm.arpaselector.ARPASelector.__init__(self, filename)
+        self._contextHandler = contextHandler
+        self._limit = int(limit)
+        self._unigramThreshold = int(unigram_threshold)
 
     def suggestions(self, prefix):
         if len(prefix) > 0 \
@@ -44,15 +64,14 @@ class BigramSelector(lm.arpaselector.ARPASelector):
                  or self._contextHandler.context[-1] == common.tokenize.TOKEN_END_SENTENCE):
             prefix = prefix[0].lower() + prefix[1:]
 
-        if len(prefix) > 3:
+        if len(prefix) > self._unigramThreshold:
             r = self.unigramSuggestions(prefix)
         else:
             r = self.bigramSuggestions(prefix)
         l = r[0]
-        if len(l) > 10000:
+        if len(l) > self._limit:
             l = []#l = [w for w in l if len(w) > 5] # experimental
         return (l, r[1])
-        return [] if len(l) > 10000 else l
 
 class MultiSelector(lm.Selector):
     """Combine more selectors into one."""

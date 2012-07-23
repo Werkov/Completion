@@ -1,12 +1,15 @@
 __all__ = [
     'Configuration',
-    'fillSubparsers',
+    'updateParser',
     'createFromArgs',
     'current'
 ]
 
+import argparse
+
 # Current configuration
 current = None
+aliasMap = {}
 
 class Configuration:
     """
@@ -18,32 +21,47 @@ class Configuration:
     Dependencies are hard-coded into the factory methods in descedants.
     BEWARE of cycles in dependency graph.
 
-    Configuration has text metainformation and could specify its parameter
-    retrieval via argparse.ArgumentParser class.
+    Configuration can be parametrized. Basically, it reads parameters from
+    a dictionary (mapping protocol object) loaded from INI file. Each
+    constructed object has it's own section.
+
+    Some additional parameters can also be read from command line. Their
+    specification is in `configureArgParser` method. Usually, they override
+    INI file parameter, however it depends on concrete Configuration.
     """
     _cache              = dict()
     _params             = dict()
     _factoryPrefix      = "_create"
 
-    def __init__(self, **kwargs):
+    def __init__(self, INIparams, CLIparams):
         """
-        Configuration can be parametrized via keyword arguments for use in factory methods.
+        INIparams       dict    parameters from INI file
+        CLIparams       dict    parameters from `argparse.ArgumentParser`
+                                (in dictionary format)
         """
-        self._params = kwargs
+        self._INIparams = INIparams
+        self._CLIparams = CLIparams
 
     def __getattr__(self, name):
         """Lazily create desired objects."""
         if name not in self._cache:
             try:
                 factoryMethod = self.__getattribute__(self._factoryPrefix + name[0].upper() + name[1:])
-                self._cache[name] = factoryMethod()
-            except KeyError:
-                raise AttributeError(name)
+                if name in self._INIparams:
+                    self._cache[name] = factoryMethod(self._INIparams[name])
+                else:
+                    self._cache[name] = factoryMethod(self._INIparams["DEFAULT"])
+            except KeyError as e:
+                if e.args[0] != name:
+                    raise e
+                else:
+                    raise AttributeError(name)
+                
 
         return self._cache[name]
 
     def _initialize(self):
-        """To create objects immediately instead of lazy loading and break
+        """To create objects immediately instead of lazy loading and to break
         dependency cycles."""
         pass
 
@@ -57,39 +75,48 @@ class Configuration:
 
     def __str__(self):
         result = ['# Configuration:\t' + self.__class__.__name__]
-        result.append('Parameters:')
-        for k, v in sorted(self._params.items()):
-            result.append('\t{}:\t{}'.format(k, v))
+        result.append('')
+        result.append(str(self._INIparams))
+        result.append('')
+        result.append(str(self._CLIparams))
         result.append('')
         return '\n# '.join(result)
 
+    # metainformation
     description = None
     aliases     = []
 
-
-def fillSubparsers(subparsers):
-    """Create subparsers for known configurations."""
+def updateParser(parser):
+    global aliasMap
     # more configuration modules could be set here
     import common.configuration.basic as bas
 
-    for name, val in vars(bas).items():
+    choices = []
+    helps = []
+    for name, cls in vars(bas).items():
         try:
-            # val is descedant class of `Configuration`
-            if issubclass(val, Configuration) and not issubclass(Configuration, val):
-                parser = subparsers.add_parser(name.lower(), help=val.description, aliases=val.aliases)
-                val.configureArgParser(parser)
-                parser.set_defaults(confClass=val)
+            # cls is descedant class of `Configuration`
+            if issubclass(cls, Configuration) and not issubclass(Configuration, cls):
+                choices.append(cls.alias)
+                helps.append(cls.description)
+                aliasMap[cls.alias] = cls
+                try:
+                    cls.configureArgParser(parser)
+                except argparse.ArgumentError:
+                    continue
+                    
         except TypeError:
             continue
-    pass
 
-    
-    return
+    rows = []
+    for c, h in zip(choices, helps):
+        rows.append('\t{}:\t{}'.format(c, h))
+    helpMessage = '\n'.join(rows)
+    parser.add_argument('-c', '--configuration', choices=choices, help=helpMessage, required=True)
 
-
-def createFromArgs(args):
-    """Initialize module attribute with chosen configuration."""
+def createFromParams(args, INIparams):
+    """Initialize the module attribute with chosen configuration."""
     global current
-    current = args.confClass(**vars(args))
+    current = aliasMap[args.configuration](INIparams, vars(args))
     current._initialize()
 

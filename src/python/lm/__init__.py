@@ -41,6 +41,6 @@ class Selector:
 
     def suggestions(self, prefix):
         """Suggestions for current context, filtered by the prefix."""
-        return []
+        return ([], 0)
 
 

@@ -5,6 +5,7 @@ import collections
 def pathFinder(path, pathVar="LMPATH"):
     """Find given name in paths specified by given environment variable.
     Return original path when any path doesn't exist."""
+
     candidates = os.environ[pathVar].split(os.pathsep) if pathVar in os.environ else []
     candidates = [''] + candidates
     for prePath in candidates:
