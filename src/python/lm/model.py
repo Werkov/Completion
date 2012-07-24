@@ -125,6 +125,7 @@ class LInterpolatedModel(lm.LangModel):
                 break
             prevEntropy = entropy
         print("{} Weights:\t".format(iterations) + "\t".join(["{:.2f}".format(w) for w in self._weights]), file=trace)
+        print(file=trace)
 
 class LInterpolatedModelBi(LInterpolatedModel):
     """Optimized case of LInterpolatedModel for two models."""

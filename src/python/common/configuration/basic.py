@@ -71,7 +71,7 @@ class Basic(Configuration):
         if params.getboolean('enabled', fallback=True):            
             p = dict(params)
             p['prefix_condition'] = params.getboolean('prefix_condition')
-            return ui.filter.SuggestionsLimiter( ** p)
+            return ui.filter.SuggestionsLimiter(** p)
 
     def _createSortFilter(self, params):
         if params.getboolean('enabled', fallback=True):
@@ -83,7 +83,7 @@ class Basic(Configuration):
 
     def _createSuffixFilter(self, params):
         if params.getboolean('enabled', fallback=True):
-            return ui.filter.SuffixAggegator(self.contextHandler, **params)
+            return ui.filter.SuffixAggegator(self.contextHandler, ** params)
 
 # tokenization
     def _createStringTokenizer(self, params):
@@ -154,7 +154,7 @@ class BasicCached(Basic):
         return self.cachedSelector
 
     def _createCachedModel(self, params):
-        return lm.model.CachedModel(** params)
+        return lm.model.CachedModel( ** params)
 
     def _createCachedSelector(self, params):
         return lm.selection.UniformSelector(languageModel=self.cachedModel)
@@ -166,11 +166,16 @@ class UnigramCached(BasicCached):
     @staticmethod
     def configureArgParser(parser):
         Unigram.configureArgParser(parser)
+        parser.add_argument('-mw', help='interpolation weight for user model', type=float)
+        parser.add_argument('-cw', help='interpolation weight for cached model', type=float)
 
     def _createLanguageModel(self, params):
+        mw = self._CLIparams['mw'] if self._CLIparams['mw'] != None else float(params['main_weight'])
+        cw = self._CLIparams['cw'] if self._CLIparams['cw'] != None else float(params['cached_weight'])
+
         lin = lm.model.LInterpolatedModelBi()
-        lin.addModel(self.mainModel, float(params['main_weight']))
-        lin.addModel(self.cachedModel, float(params['cached_weight']))
+        lin.addModel(self.mainModel, mw)
+        lin.addModel(self.cachedModel, cw)
         lin.normalizeWeights()
         lin.compile()
         return lin
@@ -205,12 +210,17 @@ class UnigramUserCached(UnigramCached):
     def configureArgParser(parser):
         parser.add_argument('-ulm', help='path to ARPA file with user model')
         parser.add_argument('-usel', help='path to ARPA file with model for user selector')
+        parser.add_argument('-uw', help='interpolation weight for user model', type=float)
 
     def _createLanguageModel(self, params):
+        mw = self._CLIparams['mw'] if self._CLIparams['mw'] != None else float(params['main_weight'])
+        uw = self._CLIparams['uw'] if self._CLIparams['uw'] != None else float(params['user_weight'])
+        cw = self._CLIparams['cw'] if self._CLIparams['cw'] != None else float(params['cached_weight'])
+
         lin = lm.model.LInterpolatedModelTri()
-        lin.addModel(self.mainModel, float(params['main_weight']))
-        lin.addModel(self.userModel, float(params['user_weight']))
-        lin.addModel(self.cachedModel, float(params['cached_weight']))
+        lin.addModel(self.mainModel, mw)
+        lin.addModel(self.userModel, uw)
+        lin.addModel(self.cachedModel, cw)
         lin.normalizeWeights()
         lin.compile()
         return lin
