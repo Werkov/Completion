@@ -25,7 +25,11 @@ class UniformSelector(lm.Selector):
 
     def suggestions(self, prefix):
         voc = self._vocabulary()
-        suggestions = [tok for tok in voc if tok.lower().startswith(prefix.lower())]
+        suggestions = [
+            tok for tok in voc
+            if  tok.lower().startswith(prefix.lower())
+                and tok not in [common.tokenize.TOKEN_BEG_SENTENCE, common.tokenize.TOKEN_END_SENTENCE]
+            ]
         prefixProb = len(suggestions) / len(voc) if len(voc) > 0 else 0
         return (suggestions, prefixProb)
 
@@ -33,7 +37,7 @@ class UniformSelector(lm.Selector):
         return self._languageModel.vocabulary() if self._languageModel else self._dictionary
 
 class UnigramSelector(lm.arpaselector.ARPASelector):
-    def __init__(self, filename, contextHandler, limit=10000, **kwargs):
+    def __init__(self, filename, contextHandler, limit=10000, ** kwargs):
         lm.arpaselector.ARPASelector.__init__(self, filename)
         self._contextHandler = contextHandler
         self._limit = int(limit)
@@ -44,15 +48,13 @@ class UnigramSelector(lm.arpaselector.ARPASelector):
                 common.tokenize.TOKEN_END_SENTENCE]:
             prefix = prefix[0].lower() + prefix[1:]
 
-        r = self.unigramSuggestions(prefix)
+        r = self.unigramSuggestions(prefix, self._limit)
         l = r[0]
-        if len(l) > self._limit:
-            l = []#l = [w for w in l if len(w) > 5] # experimental
         return (l, r[1])
 
 
 class BigramSelector(lm.arpaselector.ARPASelector):
-    def __init__(self, filename, contextHandler, limit=10000, unigram_threshold=3, **kwargs):
+    def __init__(self, filename, contextHandler, limit=10000, unigram_threshold=3, ** kwargs):
         lm.arpaselector.ARPASelector.__init__(self, filename)
         self._contextHandler = contextHandler
         self._limit = int(limit)
@@ -65,12 +67,13 @@ class BigramSelector(lm.arpaselector.ARPASelector):
             prefix = prefix[0].lower() + prefix[1:]
 
         if len(prefix) > self._unigramThreshold:
-            r = self.unigramSuggestions(prefix)
+            r = self.unigramSuggestions(prefix, self._limit)
         else:
-            r = self.bigramSuggestions(prefix)
+            r = self.bigramSuggestions(prefix, self._limit)
+#        r = self.bigramSuggestions(prefix, self._limit)
+#        if len(r) == 0: # if we got 0 because of lack of suggestions
+#            r = self.unigramSuggestions(prefix, self._limit)
         l = r[0]
-        if len(l) > self._limit:
-            l = []#l = [w for w in l if len(w) > 5] # experimental
         return (l, r[1])
 
 class MultiSelector(lm.Selector):

@@ -3,6 +3,7 @@
 import argparse
 import datetime
 import configparser
+import sys
 
 import common.configuration
 from common import pathFinder
@@ -38,20 +39,22 @@ def main():
 
     test.metrics.append(evaluation.metrics.Metric(common.configuration.current))
     test.metrics.append(evaluation.metrics.PerplexityMetric(common.configuration.current))
-    test.metrics.append(evaluation.metrics.QwertyMetric(common.configuration.current))
-    #test.metrics.append(evaluation.metrics.SelectorMetric(common.configuration.current))
+    test.metrics.append(evaluation.metrics.PerplexityOOVMetric(common.configuration.current))
+    test.metrics.append(evaluation.metrics.TimeMetric(common.configuration.current))
+    test.metrics.append(evaluation.metrics.KeystrokesMetric(common.configuration.current))
 
     
     
     startTime = datetime.datetime.now()
     print('# Start at {}'.format(startTime))
-    print(common.configuration.current)
     test.printHeader()
     test.runTest()
     test.printResult()
     endTime = datetime.datetime.now()
     print('# End at {}'.format(endTime))
     print('# Took {}'.format(endTime - startTime))
+    print('#')
+    print(common.configuration.current)
     
 
 if __name__ == '__main__':

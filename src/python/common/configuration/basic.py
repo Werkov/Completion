@@ -35,6 +35,7 @@ class Basic(Configuration):
             self.interpunctionFilter,
             self.probabilityFilter,
             self.sortFilter,
+            self.suffixFilter,
             self.limitFilter,
             self.capitalizeFilter
         ] if f]
@@ -67,16 +68,24 @@ class Basic(Configuration):
             return ui.filter.ProbabilityEstimator(self.languageModel)
 
     def _createLimitFilter(self, params):
-        if params.getboolean('enabled', fallback=True):
-            return ui.filter.SuggestionsLimiter(** params)
+        if params.getboolean('enabled', fallback=True):            
+            p = dict(params)
+            p['prefix_condition'] = params.getboolean('prefix_condition')
+            return ui.filter.SuggestionsLimiter( ** p)
 
     def _createSortFilter(self, params):
         if params.getboolean('enabled', fallback=True):
             def sortFilter(suggestions):
-                return (sorted(suggestions[0], key=lambda sugg: (sugg[1], len(sugg[0])), reverse=True), suggestions[1])
-            return sortFilter
+                suggestions[0].sort(key=lambda sugg: (sugg[1], len(sugg[0])), reverse=True)
+                return suggestions
+                #return (sorted(suggestions[0], key=lambda sugg: (sugg[1], len(sugg[0])), reverse=True), suggestions[1])
+        return sortFilter
 
-    # tokenization
+    def _createSuffixFilter(self, params):
+        if params.getboolean('enabled', fallback=True):
+            return ui.filter.SuffixAggegator(self.contextHandler, **params)
+
+# tokenization
     def _createStringTokenizer(self, params):
         return common.tokenize.StringTokenizer()
 
@@ -95,6 +104,10 @@ class Basic(Configuration):
     # UI
     def _createPredictNext(self, params):
         return False
+
+    # self-evaluation
+    def _createSuggestionCache(self, params):
+        return {}
 
 class Unigram(Basic):
     description = """Unigram model for suggestions."""
@@ -141,7 +154,7 @@ class BasicCached(Basic):
         return self.cachedSelector
 
     def _createCachedModel(self, params):
-        return lm.model.CachedModel( ** params)
+        return lm.model.CachedModel(** params)
 
     def _createCachedSelector(self, params):
         return lm.selection.UniformSelector(languageModel=self.cachedModel)
@@ -155,9 +168,11 @@ class UnigramCached(BasicCached):
         Unigram.configureArgParser(parser)
 
     def _createLanguageModel(self, params):
-        lin = lm.model.LInterpolatedModel()
+        lin = lm.model.LInterpolatedModelBi()
         lin.addModel(self.mainModel, float(params['main_weight']))
         lin.addModel(self.cachedModel, float(params['cached_weight']))
+        lin.normalizeWeights()
+        lin.compile()
         return lin
 
     def _createSelector(self, params):
@@ -192,10 +207,12 @@ class UnigramUserCached(UnigramCached):
         parser.add_argument('-usel', help='path to ARPA file with model for user selector')
 
     def _createLanguageModel(self, params):
-        lin = lm.model.LInterpolatedModel()
+        lin = lm.model.LInterpolatedModelTri()
         lin.addModel(self.mainModel, float(params['main_weight']))
         lin.addModel(self.userModel, float(params['user_weight']))
         lin.addModel(self.cachedModel, float(params['cached_weight']))
+        lin.normalizeWeights()
+        lin.compile()
         return lin
 
     def _createSelector(self, params):
@@ -212,7 +229,7 @@ class UnigramUserCached(UnigramCached):
     def _createUserSelector(self, params):
         filename = self._CLIparams['usel'] if self._CLIparams['usel'] else params['file']
         if params.getboolean('bigram', fallback=False):
-            return lm.selection.UnigramSelector(pathFinder(filename), self.contextHandler, ** params)
+            return lm.selection.BigramSelector(pathFinder(filename), self.contextHandler, ** params)
         else:
             return lm.selection.UnigramSelector(pathFinder(filename), self.contextHandler, ** params)
 
@@ -223,76 +240,7 @@ class NgramUserCached(UnigramUserCached):
     def _createMainSelector(self, params):
         return Ngram._createMainSelector(self, params)
 
-#
-#class Simple(Basic):
-#    description = """KenLM for probability evaluation and its vocabulary for uniform selector."""
-#    alias = 's'
-#
-#    def configureArgParser(parser):
-#        Basic.configureArgParser(parser)
-#        parser.add_argument('-lm', help='path to ARPA file', required=True)
-#
-#
-#    def _createSelector(self):
-#        return lm.selection.UniformSelector(languageModel=self.languageModel)
-#
-#    def _createLanguageModel(self):
-#        return KenLMModel(pathFinder(self._params['lm']))
-#
-#class Uniform(Simple):
-#    description = """KenLM for probability evaluation and another's KenLM vocabulary for
-#        uniform selector."""
-#    alias = 'u'
-#
-#    def configureArgParser(parser):
-#        Basic.configureArgParser(parser)
-#        parser.add_argument('-lm', help='path to probability ARPA file', required=True)
-#        parser.add_argument('-voc', help='path to vocabulary ARPA file', required=True)
-#
-#
-#    def _createSelector(self):
-#        return lm.selection.UniformSelector(KenLMModel(pathFinder(self._params['voc'])).vocabulary())
-#    def _createLanguageModel(self):
-#        return KenLMModel(pathFinder(self._params['lm']))
-#
-#class Bigram(Simple):
-#    description = """KenLM for probability evaluation and bigram selector based
-#    on ARPA file."""
-#    alias = 'b'
-#
-#    def configureArgParser(parser):
-#        Basic.configureArgParser(parser)
-#        parser.add_argument('-lm', help='path to probability ARPA file', required=True)
-#        parser.add_argument('-sel', help='path to selector ARPA file', required=True)
-#
-#
-#    def _createSelector(self):
-#        return lm.selection.BigramSelector(pathFinder(self._params['sel']), self.contextHandler)
-#    def _createLanguageModel(self):
-#        return KenLMModel(pathFinder(self._params['lm']), False)
-#
-#
-#class BigramCached(Bigram):
-#    description = """KenLM for probability evaluation and bigram selector based
-#    on ARPA file + cache."""
-#    alias = 'bc'
-#
-#
-#    def _createSelector(self):
-#        multi = lm.selection.MultiSelector()
-#        multi.addSelector(lm.selection.BigramSelector(pathFinder(self._params['sel']), self.contextHandler))
-#        multi.addSelector(lm.selection.UniformSelector(languageModel=self.cachedModel))
-#        return multi
-#
-#    def _createLanguageModel(self):
-#        lin = lm.model.LInterpolatedModel()
-#        lin.addModel(KenLMModel(pathFinder(self._params['lm']), False), 0.93)
-#        lin.addModel(self.cachedModel, 0.2)
-#        return lin
-#
-#    def _createCachedModel(self):
-#        return lm.model.CachedModel()
-#
+
 #class BigramNext(BigramCached):
 #    description = """KenLM for probability evaluation and bigram selector based
 #    on ARPA file + cache. EXPERIMENATL: Suggests also continuations of the first word."""

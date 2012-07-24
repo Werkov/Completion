@@ -1,5 +1,6 @@
 %Module arpaselector
 
+
 %Include ../mapped-types.sip
 
 class ARPASelector {
@@ -10,10 +11,10 @@ Create selector from ARPA file, gzipped ARPA file or binary file.
 #include "ARPA-selector.h"
 %End
 public:
-    ARPASelector(const std::string &str);
+    ARPASelector(const std::string &str, float crop = -5);
 %MethodCode
     try {
-        sipCpp = new ARPASelector(*a0);
+        sipCpp = new ARPASelector(*a0, a1);
     } catch(util::Exception e) {
         PyErr_SetString(PyExc_IOError, e.what());
         sipCpp = 0;
@@ -25,7 +26,7 @@ public:
 Reset selector to null context.
 %End
 
-    std::vector<std::string> unigramSuggestions(double & prefixProb, const std::string& prefix);
+    std::vector<std::string> unigramSuggestions(double & prefixProb, const std::string& prefix, unsigned int limit);
 %Docstring
 Return suggestions starting with given prefix.
 Returned order is lexicographic on C++ strings.
@@ -37,7 +38,7 @@ It's a MLE from uniform distribution.
 //     // haha
 //%End
 
-    std::vector<std::string> bigramSuggestions(double & prefixProb, const std::string& prefix);
+    std::vector<std::string> bigramSuggestions(double & prefixProb, const std::string& prefix, unsigned int limit);
 %Docstring
 Return suggestions starting with given prefix pruned with current context.
 Returned order is lexicographic on C++ strings.

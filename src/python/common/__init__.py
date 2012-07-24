@@ -90,3 +90,6 @@ class Trie:
             result += self.children(key + n)
         return result
 
+class DevNullFile:
+    def write(self, data):
+        pass

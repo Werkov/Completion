@@ -10,7 +10,7 @@ public:
     Model(const std::string &str, bool loadVocabulary = true);
 %MethodCode
     try {
-        sipCpp = new Model(*a0);
+        sipCpp = new Model(*a0, a1);
     } catch(util::Exception e) {
         PyErr_SetString(PyExc_IOError, e.what());
         sipCpp = 0;

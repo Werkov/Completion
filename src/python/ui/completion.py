@@ -190,9 +190,20 @@ class TextEdit(QtGui.QPlainTextEdit):
         textContent = self.toPlainText()[0:cursorPosition]
         self.contextHandler.update(textContent)
 
+    _fastAcceptMap = {
+        QtCore.Qt.Key_F1: 0,
+        QtCore.Qt.Key_F2: 1,
+        QtCore.Qt.Key_F3: 2,
+        QtCore.Qt.Key_F4: 3,
+        QtCore.Qt.Key_F5: 4
+    }
     def _acceptSuggestion(self, keyEvent):
         """keyEvent can be none in case of invoking accept by mouse"""
-        chosenItem = self.popup.currentItem() if self.popup.currentItem() else self.popup.item(0)
+        if keyEvent and keyEvent.key() in self._fastAcceptMap:
+            chosenItem = self.popup.item(self._fastAcceptMap[keyEvent.key()])
+        else:
+            chosenItem = self.popup.currentItem() if self.popup.currentItem() else self.popup.item(0)
+            
         if not chosenItem:
             return None
         prefix = self._prefix()
@@ -227,6 +238,7 @@ class TextEdit(QtGui.QPlainTextEdit):
         tc.insertText(prepend + suggestion + appendix)
         self.cursorMoveReason = self.InnerReason
         self.setTextCursor(tc)
+        return True
     #
     # Event handling
     #
@@ -271,9 +283,8 @@ class TextEdit(QtGui.QPlainTextEdit):
 
                 self.setPopupState(self.Popup_Focused, False)
                 handled = True
-            elif self._isFastAcceptKey(event):
-                self._acceptSuggestion(event)
-                handled = True
+            elif self._isFastAcceptKey(event):                
+                handled = self._acceptSuggestion(event)
                 if len(self._currentSuggestions()) > 0:
                     self.setPopupState(self.Popup_Visible)
                 else:
@@ -343,7 +354,7 @@ class TextEdit(QtGui.QPlainTextEdit):
             or (keyEvent.text() != "" and keyEvent.text() in self.acceptBasicSet)
 
     def _isFastAcceptKey(self, keyEvent):
-        return keyEvent.key() in [QtCore.Qt.Key_Tab]
+        return keyEvent.key() in [QtCore.Qt.Key_Tab, QtCore.Qt.Key_F1, QtCore.Qt.Key_F2, QtCore.Qt.Key_F3, QtCore.Qt.Key_F4, QtCore.Qt.Key_F5]
 
 
     def _consumeLastSpace(self):
