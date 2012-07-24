@@ -1,13 +1,15 @@
 import math
+from operator import __contains__
 import sys
-import collections
 
-import lm
-import lm.probability
+import collections
 import common.tokenize
+import lm
+from lm import probability
+import lm.probability
 
 class CachedModel(lm.LangModel):
-    def __init__(self, size = 100, **kwargs):
+    def __init__(self, size=100, ** kwargs):
         self._size = int(size)
         self.reset()
 
@@ -43,10 +45,12 @@ class LInterpolatedModel(lm.LangModel):
     def __init__(self):
         self._models = []
         self._weights = []
+        self._vocabulary = MultiVocabulary()
 
     def addModel(self, model, weight):
         self._models.append(model)
         self._weights.append(weight)
+        self._vocabulary.addModel(model)
 
     def normalizeWeights(self):
         W = sum(self._weights)
@@ -63,6 +67,9 @@ class LInterpolatedModel(lm.LangModel):
     def probability(self, token, changeContext=True):
         comb = [weight * 2 ** model.probability(token, changeContext) for model, weight in zip(self._models, self._weights)]
         return math.log(sum(comb), 2)
+
+    def vocabulary(self):
+        return self._vocabulary
 
     def optimizeWeights(
                         self,
@@ -106,16 +113,62 @@ class LInterpolatedModel(lm.LangModel):
 
         prevEntropy, newWeights = iteration()
         while True:
-            print("{} W:\t".format(iterations) + "\t".join(["{:.2f}".format(w) for w in self._weights]), file=trace)
+            print("{} Weights:\t".format(iterations) + "\t".join(["{:.2f}".format(w) for w in self._weights]), file=trace)
             self._weights = newWeights
             entropy, newWeights = iteration()
             delta = (entropy-prevEntropy) / entropy
-            print("{} P:\t{:.1f}\t{:.1f}\td = {:.1f}%".format(iterations, prevEntropy, entropy, delta*100), file=trace)
+            print("{} Entropy:\t{:.1f} -> {:.1f}\td = {:.1f}%".format(iterations, prevEntropy, entropy, delta * 100), file=trace)
             if delta > 0:
-                print("{}\tSomething went wrong, entropy increased ({}%).".format(iterations, delta*100), file=trace)
+                print("{}\tSomething went wrong, entropy increased ({}%).".format(iterations, delta * 100), file=trace)
                 break
             if (stopDelta and abs(delta) < stopDelta) or iterations >= stopIterations:
                 break
             prevEntropy = entropy
-        print("{} W:\t".format(iterations) + "\t".join(["{:.2f}".format(w) for w in self._weights]), file=trace)
+        print("{} Weights:\t".format(iterations) + "\t".join(["{:.2f}".format(w) for w in self._weights]), file=trace)
 
+class LInterpolatedModelBi(LInterpolatedModel):
+    """Optimized case of LInterpolatedModel for two models."""
+
+    def compile(self):
+        self.w0 = self._weights[0]
+        self.w1 = self._weights[1]
+        self.m0 = self._models[0]
+        self.m1 = self._models[1]
+
+    def probability(self, token, changeContext=True):
+        # This is about 30% faster than generic method.
+        return math.log(
+                        self.w0 * 2 ** self.m0.probability(token, changeContext) +
+                        self.w1 * 2 ** self.m1.probability(token, changeContext)
+                        , 2)
+
+class LInterpolatedModelTri(LInterpolatedModel):
+    """Optimized case of LInterpolatedModel for two models."""
+
+    def compile(self):
+        self.w0 = self._weights[0]
+        self.w1 = self._weights[1]
+        self.w2 = self._weights[2]
+        self.m0 = self._models[0]
+        self.m1 = self._models[1]
+        self.m2 = self._models[2]
+
+    def probability(self, token, changeContext=True):
+        return math.log(
+                        self.w0 * 2 ** self.m0.probability(token, changeContext) +
+                        self.w1 * 2 ** self.m1.probability(token, changeContext) +
+                        self.w2 * 2 ** self.m2.probability(token, changeContext)
+                        , 2)
+
+class MultiVocabulary:
+    def __init__(self):
+        self._models = []
+
+    def addModel(self, model):
+        self._models.append(model)
+
+    def __contains__(self, token):
+        for model in self._models:
+            if token in model.vocabulary():
+                return True
+        return False

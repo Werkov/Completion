@@ -5,6 +5,7 @@ __all__ = [
     'current'
 ]
 
+from io import TextIOWrapper
 import argparse
 
 # Current configuration
@@ -76,10 +77,21 @@ class Configuration:
     def __str__(self):
         result = ['# Configuration:\t' + self.__class__.__name__]
         result.append('')
-        result.append(str(self._INIparams))
+        result.append('CLI params:')
+        for k, v in self._CLIparams.items():
+            if isinstance(v, list):
+                v = [file.name for file in v]
+            elif isinstance(v, TextIOWrapper):
+                v = v.name
+            result.append('\t{}:\t{}'.format(k, v))
+
         result.append('')
-        result.append(str(self._CLIparams))
-        result.append('')
+        result.append('INI params:')
+        for section in self._INIparams:
+            result.append('\t[{}]'.format(section))
+            for k in self._INIparams[section]:
+                result.append('\t\t{}={}'.format(k, self._INIparams[section][k]))        
+        result.append('')        
         return '\n# '.join(result)
 
     # metainformation

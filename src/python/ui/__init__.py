@@ -56,6 +56,7 @@ class ContextHandler:
     def reset(self):
         self.context = []
         self.prefix = ""
+        self._reset()
 
     def shift(self, token):
         self.context.append(token)

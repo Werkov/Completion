@@ -5,7 +5,7 @@ class AutomatedTest:
     metrics = []
     colPadding = 3
 
-    def printResult(self, data=None):
+    def printResult(self, data=None, comment=False):
         if not data:
             data = self.result()
         headerWidths = []
@@ -27,7 +27,7 @@ class AutomatedTest:
             
             row.append(format.format(val))
 
-        print(' ' + '\t'.join(row))
+        print(('#' if comment else ' ') + '\t'.join(row))
 
     def printHeader(self):
         row = []
@@ -55,12 +55,18 @@ class TextFileTest(AutomatedTest):
         sentences = self._configuration.sentenceTokenizer
         sentences.reset(tokenizer)
         tokens = common.tokenize.TokenNormalizer(sentences)
+        self._configuration.capitalizeFilter.enabled = False
 
         for token in tokens:
             if token != common.tokenize.TOKEN_BEG_SENTENCE:
                 for metric in self.metrics:
+                    self._configuration.contextHandler.prefix = ""
                     metric.measure(token)
             self._configuration.contextHandler.shift(token)
+            self._configuration.suggestionCache.clear() # invalidate sugesstions cache
+
+        for m in self.metrics:
+            m.finish()
             
     def result(self):
         """Return list with concatenated results from all metrics; order is given
@@ -117,6 +123,6 @@ class MultiTest(AutomatedTest):
             test.printResult()
         print('# ----------')
         print('# mean')
-        super().printResult()
+        super().printResult(comment=True)
         print('# variance')
-        super().printResult(self.variance())
+        super().printResult(self.variance(), comment=True)
