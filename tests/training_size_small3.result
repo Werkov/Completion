@@ -1,0 +1,98 @@
+# Start at 2012-07-25 17:25:43.535099
+#   tokens	   chars	   pplxity	   pplxity'	   OOV	   tok/s	   keystroke ratio	   mean pos
+# /home/michal/bc/Completion/large-data/fykos.test.10.txt
+       866	    5021	     509.4	      268.8	    97	   218.6	            0.6224	      1.795
+# /home/michal/bc/Completion/large-data/fykos.test.1.txt
+       952	    5215	     855.6	      292.6	   183	   217.7	            0.7323	      1.786
+# /home/michal/bc/Completion/large-data/fykos.test.2.txt
+       784	    4266	     446.7	      268.2	    71	   238.1	            0.6169	       1.85
+# /home/michal/bc/Completion/large-data/fykos.test.3.txt
+       482	    2751	     508.1	      193.2	    77	   277.7	            0.6459	       1.83
+# /home/michal/bc/Completion/large-data/fykos.test.4.txt
+       603	    3475	     403.1	      183.8	    78	     261	            0.6136	      1.723
+# /home/michal/bc/Completion/large-data/fykos.test.5.txt
+       678	    3694	       311	      164.4	    68	   279.4	            0.6058	       1.76
+# /home/michal/bc/Completion/large-data/fykos.test.6.txt
+       886	    5038	     460.5	      240.5	   100	   215.3	             0.625	      1.924
+# /home/michal/bc/Completion/large-data/fykos.test.7.txt
+       917	    5264	      1081	      339.4	   198	   217.8	            0.7582	      1.823
+# /home/michal/bc/Completion/large-data/fykos.test.8.txt
+       529	    2863	     885.2	      285.6	   108	   264.9	            0.7401	      1.933
+# /home/michal/bc/Completion/large-data/fykos.test.9.txt
+       757	    4418	     636.8	      301.8	   100	   228.1	            0.6686	      1.823
+# ----------
+# mean
+#    745.4	    4200	     609.7	      253.8	   108	   241.9	            0.6629	      1.825
+# variance
+#2.491e+04	8.259e+05	 5.605e+04	       2933	  1880	   620.9	          0.003105	   0.003925
+# End at 2012-07-25 17:26:15.277434
+# Took 0:00:31.742335
+#
+# Configuration:	NgramCached
+# 
+# CLI params:
+# 	files:	["<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/fykos.test.10.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/fykos.test.1.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/fykos.test.2.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/fykos.test.3.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/fykos.test.4.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/fykos.test.5.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/fykos.test.6.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/fykos.test.7.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/fykos.test.8.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/fykos.test.9.txt' mode='r' encoding='UTF-8'>"]
+# 	msel:	fykos.train.lm3kni.sel.bin
+# 	uw:	None
+# 	inifile:	['lmconfig.ini']
+# 	list:	None
+# 	mlm:	fykos.train.lm3kni.bin
+# 	mw:	0.893
+# 	ulm:	None
+# 	configuration:	nc
+# 	cw:	0.107
+# 	usel:	None
+# 
+# INI params:
+# 	[DEFAULT]
+# 		path=/home/michal/bc/Completion/large-data
+# 	[languageModel]
+# 		main_weight=5
+# 		user_weight=1
+# 		cached_weight=1
+# 		path=/home/michal/bc/Completion/large-data
+# 	[mainSelector]
+# 		file=/home/michal/bc/Completion/large-data/wiki.cs.train.lm3kni.sel.bin
+# 		limit=10000
+# 		unigram_threshold=2
+# 		path=/home/michal/bc/Completion/large-data
+# 	[mainModel]
+# 		file=/home/michal/bc/Completion/large-data/wiki.cs.train.lm3kni.bin
+# 		path=/home/michal/bc/Completion/large-data
+# 	[userSelector]
+# 		bigram=true
+# 		file=/home/michal/bc/Completion/large-data/fykos.train.lm3kni.sel.bin
+# 		path=/home/michal/bc/Completion/large-data
+# 	[userModel]
+# 		file=/home/michal/bc/Completion/large-data/fykos.train.lm3kni.bin
+# 		path=/home/michal/bc/Completion/large-data
+# 	[cachedModel]
+# 		size=100
+# 		path=/home/michal/bc/Completion/large-data
+# 	[addedCharsFilter]
+# 		difference=0
+# 		empty_prefix=true
+# 		path=/home/michal/bc/Completion/large-data
+# 	[interpunctionFilter]
+# 		enabled=true
+# 		path=/home/michal/bc/Completion/large-data
+# 	[capitalizeFilter]
+# 		enabled=true
+# 		path=/home/michal/bc/Completion/large-data
+# 	[suffixFilter]
+# 		enabled=false
+# 		suffix_length=1
+# 		minimal_difference=3
+# 		excluded_count=1
+# 		group_variance=4
+# 		path=/home/michal/bc/Completion/large-data
+# 	[limitFilter]
+# 		enabled=true
+# 		min_probability=-5
+# 		max_count=5
+# 		prefix_condition=true
+# 		path=/home/michal/bc/Completion/large-data
+# 	[sentenceTokenizer]
+# 		abbr_file=/home/michal/bc/Completion/large-data/wiki.cs.abbr
+# 		path=/home/michal/bc/Completion/large-data
+# 

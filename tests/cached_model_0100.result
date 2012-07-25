@@ -1,0 +1,98 @@
+# Start at 2012-07-25 17:50:03.338045
+#   tokens	   chars	   pplxity	   pplxity'	   OOV	   tok/s	   keystroke ratio	   mean pos
+# /home/michal/bc/Completion/large-data/wiki.cs.test.10.txt
+      1338	    7413	 1.002e+19	   1.64e+07	   689	   407.1	            0.9169	       1.94
+# /home/michal/bc/Completion/large-data/wiki.cs.test.1.txt
+       973	    5711	 6.551e+20	  2.717e+08	   556	   449.7	            0.9283	      2.191
+# /home/michal/bc/Completion/large-data/wiki.cs.test.2.txt
+      2486	   14137	 1.581e+19	  4.909e+08	  1220	   234.2	            0.9147	      1.851
+# /home/michal/bc/Completion/large-data/wiki.cs.test.3.txt
+      2397	   14218	 2.893e+19	  1.296e+10	  1121	   238.4	            0.8999	       2.01
+# /home/michal/bc/Completion/large-data/wiki.cs.test.4.txt
+      1039	    5714	 2.065e+19	   1.69e+07	   549	     470	            0.9142	      1.827
+# /home/michal/bc/Completion/large-data/wiki.cs.test.5.txt
+      3282	   18732	 6.521e+19	  1.883e+10	  1579	   183.8	            0.9276	      1.902
+# /home/michal/bc/Completion/large-data/wiki.cs.test.6.txt
+      2731	   16113	 1.815e+20	  1.443e+10	  1383	     202	             0.922	      2.023
+# /home/michal/bc/Completion/large-data/wiki.cs.test.7.txt
+      5967	   35807	 1.147e+20	  8.834e+12	  2474	   113.4	            0.9061	      1.953
+# /home/michal/bc/Completion/large-data/wiki.cs.test.8.txt
+      3263	   19299	  1.02e+19	  1.401e+10	  1449	   196.8	             0.892	       1.92
+# /home/michal/bc/Completion/large-data/wiki.cs.test.9.txt
+      6868	   40376	 3.209e+19	  2.462e+12	  2759	   105.9	            0.9082	      1.894
+# ----------
+# mean
+#     3034	1.775e+04	 1.134e+20	  1.136e+12	  1378	   260.1	             0.913	      1.951
+# variance
+#3.532e+06	1.266e+08	 3.536e+40	   7.12e+24	5.083e+05	1.613e+04	          0.000123	   0.009836
+# End at 2012-07-25 17:53:17.085533
+# Took 0:03:13.747488
+#
+# Configuration:	BasicCached
+# 
+# CLI params:
+# 	files:	["<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/wiki.cs.test.10.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/wiki.cs.test.1.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/wiki.cs.test.2.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/wiki.cs.test.3.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/wiki.cs.test.4.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/wiki.cs.test.5.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/wiki.cs.test.6.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/wiki.cs.test.7.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/wiki.cs.test.8.txt' mode='r' encoding='UTF-8'>", "<_io.TextIOWrapper name='/home/michal/bc/Completion/large-data/wiki.cs.test.9.txt' mode='r' encoding='UTF-8'>"]
+# 	msel:	None
+# 	uw:	None
+# 	inifile:	['lmconfig.ini', 'cache100.ini']
+# 	list:	None
+# 	mlm:	None
+# 	mw:	None
+# 	ulm:	None
+# 	configuration:	0c
+# 	cw:	None
+# 	usel:	None
+# 
+# INI params:
+# 	[DEFAULT]
+# 		path=/home/michal/bc/Completion/large-data
+# 	[languageModel]
+# 		main_weight=5
+# 		user_weight=1
+# 		cached_weight=1
+# 		path=/home/michal/bc/Completion/large-data
+# 	[mainSelector]
+# 		file=/home/michal/bc/Completion/large-data/wiki.cs.train.lm3kni.sel.bin
+# 		limit=10000
+# 		unigram_threshold=2
+# 		path=/home/michal/bc/Completion/large-data
+# 	[mainModel]
+# 		file=/home/michal/bc/Completion/large-data/wiki.cs.train.lm3kni.bin
+# 		path=/home/michal/bc/Completion/large-data
+# 	[userSelector]
+# 		bigram=true
+# 		file=/home/michal/bc/Completion/large-data/fykos.train.lm3kni.sel.bin
+# 		path=/home/michal/bc/Completion/large-data
+# 	[userModel]
+# 		file=/home/michal/bc/Completion/large-data/fykos.train.lm3kni.bin
+# 		path=/home/michal/bc/Completion/large-data
+# 	[cachedModel]
+# 		size=100
+# 		path=/home/michal/bc/Completion/large-data
+# 	[addedCharsFilter]
+# 		difference=0
+# 		empty_prefix=true
+# 		path=/home/michal/bc/Completion/large-data
+# 	[interpunctionFilter]
+# 		enabled=true
+# 		path=/home/michal/bc/Completion/large-data
+# 	[capitalizeFilter]
+# 		enabled=true
+# 		path=/home/michal/bc/Completion/large-data
+# 	[suffixFilter]
+# 		enabled=false
+# 		suffix_length=1
+# 		minimal_difference=3
+# 		excluded_count=1
+# 		group_variance=4
+# 		path=/home/michal/bc/Completion/large-data
+# 	[limitFilter]
+# 		enabled=true
+# 		min_probability=-5
+# 		max_count=5
+# 		prefix_condition=true
+# 		path=/home/michal/bc/Completion/large-data
+# 	[sentenceTokenizer]
+# 		abbr_file=/home/michal/bc/Completion/large-data/wiki.cs.abbr
+# 		path=/home/michal/bc/Completion/large-data
+# 
