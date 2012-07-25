@@ -1,0 +1,5 @@
+*
+!.gitignore
+!configure.py
+!*.about
+!fykos.sh

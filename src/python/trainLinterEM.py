@@ -17,8 +17,8 @@ def main():
         Weights are written in a form of command line options to stdout.
         Stderr is used for estimating process.
         """)
-    parser.add_argument("file", help="file with training text", type=argparse.FileType('r'))
-    parser.add_argument("-i", help="INI file\t[%(default)s]", type=argparse.FileType('r'), default='lmconfig.ini', dest='inifile')
+    parser.add_argument("-f", help="file with training text", type=argparse.FileType('r'), dest='file', required=True)
+    parser.add_argument("-i", help="INI file(s)", nargs='+', dest='inifile')
     parser.add_argument("-d", help="relative entropy change to stop EM\t[%(default)s]", type=float, default=1e-3)
     parser.add_argument("-s", help="maximum no. of iterations\t[%(default)s]", type=int, default=20)
 
@@ -28,9 +28,9 @@ def main():
     # create configuration
     args = parser.parse_args()
     iniParser = configparser.ConfigParser()
-    iniParser.read_file(args.inifile)
+    iniParser.read(args.inifile)
     common.configuration.createFromParams(args, iniParser)
-    args.inifile.close()
+    
 
     model = common.configuration.current.languageModel
     if not isinstance(model, lm.model.LInterpolatedModel):

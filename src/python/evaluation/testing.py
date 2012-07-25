@@ -1,3 +1,4 @@
+import sys
 import common.tokenize
 from evaluation import *
 
@@ -18,7 +19,7 @@ class AutomatedTest:
         for val, length, format in zip(data, headerWidths, formats):
             if not format:
                 if isinstance(val, float):
-                    format = "{:" + str(length + self.colPadding) + ".3g}"
+                    format = "{:" + str(length + self.colPadding) + ".4g}"
                 elif isinstance(val, int):
                     format = "{:" + str(length + self.colPadding) + "d}"
                 else:
@@ -86,9 +87,10 @@ class MultiTest(AutomatedTest):
     """Run multiple tests with given metrics.
     Mean values over all tests are results for individual metrics.
     """
-    def __init__(self, configuration, tests=[]):
-        self._configruation = configuration
+    def __init__(self, configuration, tests=[], trace=sys.stderr):
+        self._configuration = configuration
         self._tests = tests
+        self._trace = trace
 
     def runTest(self):
         self._results = [] # list of result tuples from tests
@@ -97,9 +99,10 @@ class MultiTest(AutomatedTest):
         if not self._tests:
             return
 
-        for test in self._tests:
+        for i, test in enumerate(self._tests, 1):
             test.metrics = self.metrics # share metrics, individual tests resets them
             test.runTest()
+            print("Test {} of {} done.".format(i, len(self._tests)), file=self._trace)
             self._results.append(test.result())
 
         # transpose results

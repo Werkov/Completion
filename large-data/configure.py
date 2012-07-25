@@ -13,9 +13,19 @@ datafiles = {
         'tests': [1] * 10
     },
     'wiki.cs.txt': {
-        'distribution': [10000, 1000, 10, 2],
+        'distribution': [10000, 600, 15, 2],
         'type': 'w',
         'tests': [1] * 10
+    },
+    'wiki.en.txt': {
+        'distribution': [10000, 200, 4, 1],
+        'type': 'w',
+        'tests': [1] * 10
+    },
+    'fykos.txt': {
+        'distribution': [100, 20, 20, 2],
+        'type': 't',
+        'tests': [10] * 10
     }
 }
 
@@ -46,7 +56,12 @@ backoffOptions = {
     },
 }
 
-orders = [1, 3]
+customPart = """\
+wiki.en.train.txt.sentences: wiki.en.train.txt wiki.en.abbr
+\t$(FORMAT) -a wiki.en.abbr $<
+"""
+
+orders = [1, 2, 3]
 
 
 #
@@ -104,7 +119,7 @@ gzipCalls = []
 for order in orders:
     for abbr in sorted(backoffOptions.keys()):
         gzipCalls.append("""%.lm{order}{abbr}.gz: %.lm{order}{abbr}
-\tgzip $<"""
+\tgzip -f $<"""
                          .format(order=order, abbr=abbr, ABBR=abbr.upper()))
 gzipCalls = "\n".join(gzipCalls)
 
@@ -160,7 +175,7 @@ SEL_OPT= -c -5
 #
 #   Split to sentences
 %.txt.sentences: %.txt wiki.cs.abbr
-	$(FORMAT) -a wiki.cs.abbr $<
+\t$(FORMAT) -a wiki.cs.abbr $<
 
 #
 #   SRI LM training combinations
@@ -235,19 +250,23 @@ for datafile, info in datafiles.items():
         parts[-2] = str(i)
         dst = '.'.join(parts)
         files.append(dst)
-
+    # remote call with unexpanded asterisk
+    parts[-2] = '*'
+    dst = '.'.join(parts)
+    files.append('"{}"'.format(dst))
+    
     testSplitCalls.append("""{files}: {datafile}
 \t$(SPLIT) -u {type} $< {dist}"""
                           .format(
-                          files='\\\n'.join(files),
+                          files=' \\\n'.join(files),
                           datafile=datafile,
                           type=info['type'],
                           dist=' '.join([str(t) for t in info['tests']]),
                           renames="\n\t".join(renames)))
     allFiles.extend(files)
                       
-splitCalls = "\n".join(splitCalls)
-testSplitCalls = "\n".join(testSplitCalls)
+splitCalls = "\n\n".join(splitCalls)
+testSplitCalls = "\n\n".join(testSplitCalls)
 
 output = open('Makefile', 'w')
 
@@ -265,18 +284,20 @@ all:\\
 
 {testSplitCalls}
 
-
 clean:
 \trm -f *.bin
 
 cleanall: clean
 \trm -f *.sentences {clearNames}
+
+{customPart}
 """.format(
              warning=warning,
-             all='\\\n'.join(allFiles),
+             all=' \\\n'.join(allFiles),
              splitCalls=splitCalls,
              testSplitCalls=testSplitCalls,
-             clearNames = ' '.join(["*.{}.txt".format(n) for n in names] + ["*.{}.*.txt".format(names[2])])
+             clearNames = ' '.join(["*.{}.txt".format(n) for n in names] + ["*.{}.*.txt".format(names[2])]),
+             customPart = customPart
              ))
              
 output.close()

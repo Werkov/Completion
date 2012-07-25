@@ -1,20 +1,29 @@
 #!/usr/bin/env python3
 import sys
 
-class WikiSeparator:
-    """Units are delimited by two or more consecutive blank lines."""
-    def __init__(self):
+class BlankLineSeparator:
+    """Units are delimited by N or more consecutive blank lines."""
+    def __init__(self, N):
         self._emptyLines = 0
+        self._N = N
 
     def __call__(self, line):
         result = False
         if line.strip() == "":
             self._emptyLines += 1
         else:
-            if self._emptyLines >= 2:
+            if self._emptyLines >= self._N:
                 result = True
             self._emptyLines = 0
         return result
+
+class WikiSeparator(BlankLineSeparator):
+    def __init__(self):
+        super().__init__(2)
+
+class TexSeparator(BlankLineSeparator):
+    def __init__(self):
+        super().__init__(1)
 
 def lineSeparator(line):
     """Every line is a single unit."""

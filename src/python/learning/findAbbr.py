@@ -65,7 +65,7 @@ def main():
     parser.add_argument("-dt", help="frequency of occurencies followed by a dot\t[%(default)s]", type=float, default=0.8)
     parser.add_argument("-ct", help="frequency of occurencies followed by a dot followed by capital letter\t[%(default)s]", type=float, default=0.5)
     parser.add_argument("-l", help="maximal length of an abbreviation\t[%(default)s]", type=int, default=5)
-    parser.add_argument("-f", help="frequency of occurencies of an abbreviation, reciprocal value\t[%(default)s]", type=int, default=10000)
+    parser.add_argument("-f", help="minimal frequency of occurencies of an abbreviation, reciprocal value (i.e. one in F)\t[%(default)s]", type=int, default=10000)
     parser.add_argument("file", help="text file", type=argparse.FileType('r'), nargs='+')
 
     args = parser.parse_args()

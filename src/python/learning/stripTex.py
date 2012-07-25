@@ -20,9 +20,9 @@ def stripTex(file):
 
     # sequences whose 1st argument content is not desired text
     forbidden = {
-        'begin', 'end', 'ref', 'eqref', 'usepackage', 'documentclass'
+        'begin', 'end', 'ref', 'eqref', 'usepackage', 'documentclass',
         'probbatch', 'probno', 'probpoints', 'probsolauthors', 'probsolvers', 'probavg',
-        'illfig', 'fullfig', 'plotfig'
+        'illfig', 'fullfig', 'plotfig',
         'eq'
     }
 
@@ -120,6 +120,15 @@ def stripTex(file):
                     bracketStack.append((len(out), sequence))
                     sequence = ''
                     if mode == S_TEXT: out.append(c)
+            elif c == '}':
+                try:
+                    out.append(c)
+                    i, seq = bracketStack.pop() # not to shadow "global" sequence
+                    if seq != None and seq in forbidden:
+                        out = out[:i]
+                except IndexError:
+                    print('Unmatched right bracket.')
+                    break
             else:
                 if mode == S_TEXT: out.append(c)
                 state = mode
@@ -156,7 +165,7 @@ def stripTex(file):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Strip (La)TeX sequences from input files.")
+    parser = argparse.ArgumentParser(description="Strip (La)TeX sequences from input files and concatenate them to output.")
     parser.add_argument("file", help="(La)TeX file", type=argparse.FileType('r'), nargs='+')
 
     args = parser.parse_args()

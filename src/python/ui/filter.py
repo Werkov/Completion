@@ -136,10 +136,10 @@ class AddedCharacters:
     """
     Accept only those suggestions that are longer than prefix by given
     difference.
-    Can be active only for nonempty prefix.
+    When empty prefix is true, don't apply filter for empty prefix.
     Works with simple suggestions (not tuples).
     """
-    def __init__(self, contextHandler, difference=0, empty_prefix=False, ** kwargs):
+    def __init__(self, contextHandler, difference=0, empty_prefix=True, ** kwargs):
         self._contextHandler = contextHandler
         self._difference = int(difference)
         self._emptyPrefix = empty_prefix

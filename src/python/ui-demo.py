@@ -175,8 +175,8 @@ class Window(QtGui.QMainWindow):
 def main():
     # initialize own parser
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("-i", help="INI file\t[%(default)s]", type=argparse.FileType('r'), default='lmconfig.ini', dest='inifile')
-    parser.add_argument("file", help="text file to edit", type=argparse.FileType('r'), nargs='?')
+    parser.add_argument("-i", help="INI file(s)", dest='inifile', nargs='+')
+    parser.add_argument("-f", help="text file to edit", type=argparse.FileType('r'), dest='file')
 
     # append subparsers for configuration parameters
     common.configuration.updateParser(parser)
@@ -184,9 +184,9 @@ def main():
     # create configuration
     args = parser.parse_args()
     iniParser = configparser.ConfigParser()
-    iniParser.read_file(args.inifile)
+    iniParser.read(args.inifile)
     common.configuration.createFromParams(args, iniParser)
-    args.inifile.close()
+    
 
     # start GUI
     app = QtGui.QApplication(sys.argv)

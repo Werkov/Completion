@@ -109,6 +109,7 @@ class LInterpolatedModel(lm.LangModel):
         # --
         data = list(data) # cache data from sequence for repeated iterations
         print("Running EM algorithm on {} training tokens.".format(len(data)), file=trace)
+        self._weights = [1 / len(self._weights)] * len(self._weights)
         iterations = -1
 
         prevEntropy, newWeights = iteration()

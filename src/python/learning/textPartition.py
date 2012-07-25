@@ -19,12 +19,13 @@ def main():
         and last contains twelveth to thirteenth unit.""", formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("file", help="text file", type=argparse.FileType('r'))
-    parser.add_argument("-u", help="unit (l: line, w: wiki article)\t[%(default)s]", choices="lw", default="l")
+    parser.add_argument("-u", help="unit (l: line, w: wiki article, t: TeX paragraph)\t[%(default)s]", choices="lwt", default="l")
     parser.add_argument("d", help="distribution amounts", type=int, nargs='+')
 
     separators = {
         'l': learning.partition.lineSeparator,
-        'w': learning.partition.WikiSeparator()
+        'w': learning.partition.WikiSeparator(),
+        't': learning.partition.TexSeparator()
     }
 
     args = parser.parse_args()

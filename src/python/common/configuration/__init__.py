@@ -80,7 +80,7 @@ class Configuration:
         result.append('CLI params:')
         for k, v in self._CLIparams.items():
             if isinstance(v, list):
-                v = [file.name for file in v]
+                v = [str(file) for file in v]
             elif isinstance(v, TextIOWrapper):
                 v = v.name
             result.append('\t{}:\t{}'.format(k, v))

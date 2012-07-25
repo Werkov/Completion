@@ -16,7 +16,7 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-f", help="file(s) with test text", type=argparse.FileType('r'), dest="files", metavar="file", nargs='+')
     group.add_argument("-l", help="list of test text files, one per line, searched also in TESTPATH", type=argparse.FileType('r'), dest="list", metavar="listfile")
-    parser.add_argument("-i", help="INI file\t[%(default)s]", type=argparse.FileType('r'), default='lmconfig.ini', dest='inifile')
+    parser.add_argument("-i", help="INI file(s)", dest='inifile', nargs='+')
         
     # append subparsers for configuration parameters
     common.configuration.updateParser(parser)
@@ -24,9 +24,9 @@ def main():
     # create configuration
     args = parser.parse_args()
     iniParser = configparser.ConfigParser()
-    iniParser.read_file(args.inifile)
+    iniParser.read(args.inifile)
     common.configuration.createFromParams(args, iniParser)
-    args.inifile.close()
+    
 
     if args.list:
         files = [open(pathFinder(f.strip(), 'TESTPATH'), 'r') for f in args.list]

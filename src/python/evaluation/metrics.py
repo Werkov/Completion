@@ -247,7 +247,16 @@ class KeystrokesMetric(Metric):
 
 
     def result(self):
-        return self._keystrokeCnt / self._charCnt, self._positionSum / self._hitCnt
+        if self._hitCnt > 0:
+            meanPos = self._positionSum / self._hitCnt
+        else:
+            meanPos = float('NaN')
+        if self._charCnt > 0:
+            meanKS = self._keystrokeCnt / self._charCnt
+        else:
+            meanKS = float('NaN')
+            
+        return meanKS, meanPos
 
     def resultHeader(self):
         return 'keystroke ratio', 'mean pos'
