@@ -18,7 +18,7 @@ public:
     void shift(const std::string &token);
     static const float negativeInfinity = -100;
 private:
-    lm::ngram::QuantArrayTrieModel* model_;
+    lm::ngram::QuantTrieModel* model_;
     TokenDictionary* enumerate_vocab_; //model wrapper owner until Vocabulary is filled
     lm::ngram::State state_;
 };

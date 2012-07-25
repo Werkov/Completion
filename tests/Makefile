@@ -1,57 +1,30 @@
-#
-# Makefile for testing smoothed letter ngram LMs
-#
+SHELL=/bin/bash
 
-## Main config
+# should be set in the environment
+#LMPATH=../large-data
 
-# training text file in DATA_DIR, must be sentence per line
-TRAIN=povidky
+TEST=../src/python/self-eval.py
+CONFIG=lmconfig.ini # default configuration
 
-# testing text file in current dir (tests), must be sentence per line
-TEST=slovane
-
-# name of the LM for test
-MODEL=UnigramLetter
-
-# maximumm ngram order when generating statsfile
-NORDER=5
-
-# don't inlude ngrams with frequency lesser than CROP
-CROP=10
-
-# size of the alphabet
-ALPHABET=256
-
-## Paths config
-
-# storage of raw training data
-DATA_DIR=../sample-data/
-MODEL_DIR=../src/testing/
-TEST_PY=../src/testing/test.py
-FORMAT_PY=../src/utils/formatText.py
-STATS_PY=../src/learning/charstats.py
-
-all: train test
-
-show: train test
-	cat $(TEST)_results.txt
+.PHONY: model_order cached_model smoothing_method training_size \
+	suffix_aggregation prefix_condition suggestion_limit minimal_difference \
+	domain_adaptation
 
 
-train: $(TRAIN).stats
-$(TRAIN).stats: $(TRAIN).txt $(STATS_PY)
-	$(STATS_PY) -n $(NORDER) -m $(CROP) -a $(ALPHABET) -o $@ $(TRAIN).txt
+model_order: model_order_1.result model_order_3.result
 
-$(TRAIN).txt: $(DATA_DIR)$(TRAIN).txt $(FORMAT_PY)
-	$(FORMAT_PY) $(DATA_DIR)$(TRAIN).txt
-	mv $(DATA_DIR)$(TRAIN).txt.sentences $@
-	
+model_order_1.result: $(LMPATH)/wiki.cs.train.lm1kni.{bin,sel.bin} $(LMPATH)/wiki.cs.test.*.txt $(CONFIG)
+	$(TEST) -c n -i $(CONFIG) -mlm wiki.cs.train.lm1kni.bin -msel wiki.cs.train.lm1kni.sel.bin -f $(LMPATH)/wiki.cs.test.*.txt > $@
 
-test: $(TEST)_results.txt
-$(TEST)_results.txt: $(TEST).txt $(TRAIN).stats $(TEST_PY) $(MODEL_DIR)$(MODEL)Model.py
-	$(TEST_PY) $(MODEL) $(TRAIN).stats $(TEST).txt > $@
+model_order_3.result: $(LMPATH)/wiki.cs.train.lm3kni.{bin,sel.bin} $(LMPATH)/wiki.cs.test.*.txt $(CONFIG)
+	$(TEST) -c n -i $(CONFIG) -mlm wiki.cs.train.lm3kni.bin -msel wiki.cs.train.lm3kni.sel.bin -f $(LMPATH)/wiki.cs.test.*.txt > $@
 
 
-clean:
-	rm -f *.stats *_results.txt
+
+ax: $(LMPATH)/matka.train.lm3kn.bin
+	touch ax
+
+$(LMPATH)/%:
+	make -C $(@D) $(@F)
 
 

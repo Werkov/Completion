@@ -7,7 +7,8 @@ Model::Model(const std::string& str, bool loadVocabulary) {
         config.enumerate_vocab = static_cast<lm::EnumerateVocab*>(this->enumerate_vocab_);
     }
     //this->model_ = new lm::ngram::Model(str.c_str(), config);
-    this->model_ = new lm::ngram::QuantArrayTrieModel(str.c_str(), config);
+    this->model_ = new lm::ngram::QuantTrieModel(str.c_str(), config);    // no array compression, because of unigram "hack" models
+    //this->model_ = new lm::ngram::QuantArrayTrieModel(str.c_str(), config);
 
     this->reset();
 }
