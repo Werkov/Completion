@@ -1,5 +1,11 @@
 import common.tokenize
 
+class Suggestion:
+    """Naming container"""
+    TYPE_NORMAL     = 0
+    TYPE_PARTIAL    = 1
+    TYPE_NEXT       = 2
+
 class ContextHandler:
     """
     Keep components with state synchronized with input text.

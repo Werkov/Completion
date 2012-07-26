@@ -4,7 +4,7 @@ import collections
 import common
 import common.tokenize
 import datetime
-import ui.completion
+import ui
 
 class Metric:
     """Metric class has its own state. It could be changed by `measure` method
@@ -205,8 +205,8 @@ class KeystrokesMetric(Metric):
             self._config.contextHandler.prefix = prefix
             ll = self._suggestions(prefix)
 
-            completeSuggestions = [s for s, _, type in ll if type != ui.completion.TextEdit.TYPE_PARTIAL]
-            partialSuggestions  = [s for s, _, type in ll if type == ui.completion.TextEdit.TYPE_PARTIAL and token.startswith(s)]
+            completeSuggestions = [s for s, _, type in ll if type != ui.Suggestion.TYPE_PARTIAL]
+            partialSuggestions  = [s for s, _, type in ll if type == ui.Suggestion.TYPE_PARTIAL and token.startswith(s)]
             allSuggestions      = [s for s, _, _ in ll]
 
 

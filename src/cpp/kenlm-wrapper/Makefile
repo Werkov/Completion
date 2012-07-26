@@ -6,12 +6,13 @@ TARGET = $(BIN_DIR)/kenlm-wrapper.o
 OFILES = model-wrapper.o token-dictionary.o
 HFILES = model-wrapper.h token-dictionary.h
 KENOFILES = $(addprefix $(KENLM_BIN_DIR)/, {lm,util}/*.o)
+PYINC=`env python3 -c "import distutils.sysconfig as dsc; print(dsc.get_python_inc())"`
 
 SHELL=/bin/bash
 CXX = g++ 
 LINK = ld
-CPPFLAGS = -DNDEBUG -I. -I$(KENLM_INC_DIR) -I`python3 -c "import sys; print(sys.prefix + '/include/python' + sys.version[:3])"`
-CXXFLAGS = -O3 -Wall -W 
+CPPFLAGS = -DNDEBUG -I. -I$(KENLM_INC_DIR) -I$(PYINC)
+CXXFLAGS = -O3 -Wall -W -fPIC
 LFLAGS = -r # relocatable for further linking
 LIBS = -lz
 .SUFFIXES: .o .cpp
@@ -31,3 +32,4 @@ $(TARGET): $(addprefix $(BIN_DIR)/, $(OFILES))
 clean:
 	-rm -f $(TARGET)
 	-rm -f $(addprefix $(BIN_DIR)/, $(OFILES))
+

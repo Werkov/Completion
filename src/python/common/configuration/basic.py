@@ -5,7 +5,6 @@ import common.tokenize
 from lm.kenlm import Model as KenLMModel
 import lm.model
 import lm.selection
-import ui.completion
 import ui.filter
 
 # Inheritance tree is as follows.
@@ -282,7 +281,7 @@ class NgramUserCached(UnigramUserCached):
 #            if not primary:
 #                return []
 #            pred = primary[0][1]
-#            return [(a, b, ui.completion.TextEdit.TYPE_NORMAL) for a, b, _ in primary] + [(a, pred + b, ui.completion.TextEdit.TYPE_NEXT) for a, b, _ in secondary]
+#            return [(a, b, ui.Suggestion.TYPE_NORMAL) for a, b, _ in primary] + [(a, pred + b, ui.Suggestion.TYPE_NEXT) for a, b, _ in secondary]
 #        return merge
 #
 #    def _createCommonChain(self):

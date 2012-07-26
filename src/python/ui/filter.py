@@ -5,7 +5,6 @@ from common import Trie
 import common.tokenize
 import evaluation
 import ui
-import ui.completion
 
 # Note to filters:
 # List variants (w/out lazy iterators) is slightly faster (about 15%).
@@ -51,7 +50,7 @@ class SuffixAggegator:
                 remaining = group[excluded:]
                 if len(remaining) > 1:
                     prob = sum([2 ** p for _, p, _ in remaining])
-                    result.append((pseudoStem, math.log(prob, 2), ui.completion.TextEdit.TYPE_PARTIAL))
+                    result.append((pseudoStem, math.log(prob, 2), ui.Suggestion.TYPE_PARTIAL))
 
         # if partials are also valid suggestions merge them into one
         result.sort(key=lambda sugg:sugg[0])
@@ -59,9 +58,9 @@ class SuffixAggegator:
         for sugg, group in itertools.groupby(result, key=lambda sugg:sugg[0]):
             group = list(group)
             if len(group) > 1:
-                probNormal = sum([2 ** p for _, p, type in group if type == ui.completion.TextEdit.TYPE_NORMAL])
+                probNormal = sum([2 ** p for _, p, type in group if type == ui.Suggestion.TYPE_NORMAL])
                 prob = sum([2 ** p for _, p, type in group])
-                result.append((sugg, math.log(prob, 2), ui.completion.TextEdit.TYPE_NORMAL if 2 * probNormal > prob else ui.completion.TextEdit.TYPE_PARTIAL))
+                result.append((sugg, math.log(prob, 2), ui.Suggestion.TYPE_NORMAL if 2 * probNormal > prob else ui.Suggestion.TYPE_PARTIAL))
             else:
                 final.append(group[0])
         #final = result
@@ -98,7 +97,7 @@ class ProbabilityEstimator:
 
     Language model must be synchronized with the inserted text.
     """
-    def __init__(self, languageModel, type=ui.completion.TextEdit.TYPE_NORMAL):
+    def __init__(self, languageModel, type=ui.Suggestion.TYPE_NORMAL):
         self._languageModel = languageModel
         self._type = type
 

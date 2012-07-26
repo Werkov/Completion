@@ -10,7 +10,7 @@ KENOFILES = $(addprefix $(KENLM_BIN_DIR)/, util/file_piece.o util/exception.o ut
 SHELL=/bin/bash
 CXX = g++ 
 CPPFLAGS = -DNDEBUG -I. -I $(KENLM_INC_DIR)
-CXXFLAGS = -O3 -Wall -W 
+CXXFLAGS = -O3 -Wall -W -fPIC
 LFLAGS = 
 LIBS = -lz
 .SUFFIXES: .o .cpp 

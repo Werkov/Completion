@@ -49,10 +49,6 @@ class TextEdit(QtGui.QPlainTextEdit):
     Role_Probability = Role_Data + 1
     Role_Type = Role_Data + 2
 
-    TYPE_NORMAL     = 0
-    TYPE_PARTIAL    = 1
-    TYPE_NEXT       = 2
-
     acceptBasicSet = ",.:;\"'?!"
     consumeSpaceSet = ",.:;?!)“" # characters that usually don't follow whitespace
 
@@ -139,11 +135,11 @@ class TextEdit(QtGui.QPlainTextEdit):
             item = QtGui.QListWidgetItem()
             item.setData(self.Role_Data, suggestion)
             item.setData(self.Role_Type, type)
-            if type == self.TYPE_NORMAL:
+            if type == ui.Suggestion.TYPE_NORMAL:
                 display = suggestion
-            elif type == self.TYPE_PARTIAL:
+            elif type == ui.Suggestion.TYPE_PARTIAL:
                 display = suggestion + ":"
-            elif type == self.TYPE_NEXT:
+            elif type == ui.Suggestion.TYPE_NEXT:
                 display = self.predictor + " " + suggestion
             item.setData(QtCore.Qt.DisplayRole, "{}\t{:.2f}".format(display, probability))
             self.popup.addItem(item)
@@ -210,9 +206,9 @@ class TextEdit(QtGui.QPlainTextEdit):
         suggestion = chosenItem.data(self.Role_Data)
         prepend = ""
 
-        if chosenItem.data(self.Role_Type) == self.TYPE_PARTIAL:
+        if chosenItem.data(self.Role_Type) == ui.Suggestion.TYPE_PARTIAL:
             appendix = ""
-        elif chosenItem.data(self.Role_Type) == self.TYPE_NEXT:
+        elif chosenItem.data(self.Role_Type) == ui.Suggestion.TYPE_NEXT:
             prepend = self.predictor + " "
             appendix = " "
             self.lastSpaceReason = self.InnerReason
