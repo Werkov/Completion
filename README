@@ -10,27 +10,18 @@ It can be used:
 Dependecies
 -----------
 Needs Python3, PyQt4 for Python3, and SIP framework.
-Partially it could be installed from these Ubuntu packages:
+It could be installed from these Ubuntu packages:
+	- python3-pyqt4
 	- python3-sip 
 	- python3-sip-dev
 It's also recommended to have some NLP toolkit installed to
 create ARPA files.
 
-Alas, current Ubuntu repositories don't contain PyQt4 for Python3, therefore
-they must be installed manually:
-	- download from:
-		- http://www.riverbankcomputing.co.uk/software/sip/download
-		- http://www.riverbankcomputing.co.uk/software/pyqt/download
-	- or download appropriate version as Git submodule
-	- run (first SIP, then PyQt4):
-		- python3 configure.py
-		- make
-		- sudo make install
+Requires Ubuntu 15.04 (or newer).
 
 
 Demo
 ----
-(FIX: `chmod u+x Change src/sip/*/configure.py`, NTFS, Git and persmissions don't work well)
 First run `make` in the root directory, it should:
 	- compile KenLM objects,
 	- compile KenLM wrapper and ARPA selector objects,

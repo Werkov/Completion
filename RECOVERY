@@ -1,0 +1,7 @@
+- zlib API changed, KenLM cannot be compiled with zlib on Ubuntu 15.04,
+  however, I did compile it w/out it
+- I got to the point where UI cannot start because of missing LM data
+- the LM data could be generated from sample texts, however, ngram-count
+  utility from SRILM is necessary, thus next srep would be download and
+  compilation of SRI LM
+
