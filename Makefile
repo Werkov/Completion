@@ -1,12 +1,18 @@
-SIMPLE_MAKES=libs/kenlm src/cpp/kenlm-wrapper src/cpp/ARPA-selector sample-data
+SIMPLE_MAKES=src/cpp/kenlm-wrapper src/cpp/ARPA-selector sample-data
+CMAKES=libs/kenlm
 SIP_MAKES=src/sip/kenlm-bindings src/sip/selector-bindings
 
-.PHONY: $(SIMPLE_MAKES) $(SIP_MAKES)
+.PHONY: $(SIMPLE_MAKES) $(SIP_MAKES) $(CMAKES)
 
-all: $(SIMPLE_MAKES) $(SIP_MAKES)
+all: $(SIMPLE_MAKES) $(SIP_MAKES) $(CMAKES)
 
 $(SIMPLE_MAKES):
 	make -C $@
+
+$(CMAKES):
+	(cd $@ ; test -f Makefile || cmake .)
+	make -C $@
+	cp $(CMAKES)/bin/build_binary bin/kenlm/
 
 $(SIP_MAKES):
 	(cd $@; ./configure.py)
