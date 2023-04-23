@@ -3,6 +3,27 @@
 #include <iostream>
 #include <sys/mman.h>
 
+// XXX extraced from: kenlm f81d027 ("Clean up array trie code (should act the same)")
+template <class Iterator, class Accessor> Iterator BinaryBelow(
+    const Accessor &accessor,
+    Iterator begin,
+    Iterator end,
+    const typename Accessor::Key key) {
+  while (end > begin) {
+    Iterator pivot(begin + (end - begin) / 2);
+    typename Accessor::Key mid(accessor(pivot));
+    if (mid < key) {
+      begin = pivot + 1;
+    } else if (mid > key) {
+      end = pivot;
+    } else {
+      for (++pivot; (pivot < end) && accessor(pivot) == mid; ++pivot) {}
+      return pivot - 1;
+    }
+  }
+  return begin - 1;
+}
+
 namespace sorting {
 
 class UnigramAccessor {
@@ -169,7 +190,7 @@ ARPASelector::Unigrams ARPASelector::unigramSuggestions(double & prefixProb, con
     prefixProb = 0;
 
     sorting::UnigramPrefixAccessor accessor(prefix);
-    Unigrams::const_iterator end = util::BinaryBelow(accessor, unigrams_.begin(), unigrams_.end(), prefix);
+    Unigrams::const_iterator end = BinaryBelow(accessor, unigrams_.begin(), unigrams_.end(), prefix);
 
     Unigrams::const_iterator beg = end;
     while(beg >= unigrams_.begin() && accessor(beg) == prefix) --beg;
@@ -207,7 +228,7 @@ ARPASelector::Unigrams ARPASelector::bigramSuggestions(double & prefixProb, cons
     }
 
     sorting::WordIndexPrefixAccessor accessor(unigrams_, prefix);
-    Bigrams::const_iterator end = util::BinaryBelow(accessor, bigrams_.begin() + bBegin, bigrams_.begin() + bEnd, prefix);
+    Bigrams::const_iterator end = BinaryBelow(accessor, bigrams_.begin() + bBegin, bigrams_.begin() + bEnd, prefix);
 
     Bigrams::const_iterator beg = end;
     while(beg >= bigrams_.begin() + bBegin && accessor(beg) == prefix) --beg;

@@ -1,6 +1,7 @@
 #include "binary-serialization.h"
 
 #include <iostream>
+#include <unistd.h>
 
 void BinarySerialization::loadFromFile(const std::string& filename, ARPASelector* selector) {
     VERBOSE_INFO("Loading binary file `" << filename << "`.");
