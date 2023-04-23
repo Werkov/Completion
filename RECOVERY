@@ -5,3 +5,10 @@
   utility from SRILM is necessary, thus next srep would be download and
   compilation of SRI LM
 
+--- building on Arch Linux ---
+- installed: boost, sip
+- updated to latest KenLM, used the libraries that were needed
+  - KENLM_MAX_ORDER has to be defined multiple times in makefiles/SIP .toml configs
+- built binary artifacts, some paths are hardcoded wrt the project structure
+- next up: update to current pyqt (pyqt4 not found)
+- next up: SRILM ngram-count utility still applies
