@@ -15,9 +15,7 @@ $(CMAKES):
 	cp $(CMAKES)/bin/build_binary bin/kenlm/
 
 $(SIP_MAKES):
-	(cd $@; ./configure.py)
-	make -C $@
-	make -C $@ install
+	(cd $@; sip-install --target-dir ../../../bin/$(notdir $@))
 
 #
 # -- dependencies --
