@@ -1,7 +1,7 @@
 #ifndef TOKEN_DICTIONARY_H
 #define TOKEN_DICTIONARY_H
 
-#include <sip.h>
+#include <Python.h>
 #include <string>
 #include <iostream>
 #include "util/string_piece.hh" // needs compilation with -DHAVE_ICU

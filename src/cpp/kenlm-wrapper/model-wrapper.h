@@ -1,7 +1,7 @@
 #ifndef MODEL_WRAPPER_H
 #define MODEL_WRAPPER_H
 
-#include <sip.h>
+#include <Python.h>
 #include <string>
 #include <vector>
 #include "lm/model.hh"
@@ -16,7 +16,7 @@ public:
     void reset(const std::vector<std::string>& context = std::vector<std::string>());
     float probability(const std::string &token, bool changeContext = true);
     void shift(const std::string &token);
-    static const float negativeInfinity = -100;
+    static constexpr float negativeInfinity = -100;
 private:
     lm::ngram::QuantTrieModel* model_;
     TokenDictionary* enumerate_vocab_; //model wrapper owner until Vocabulary is filled
